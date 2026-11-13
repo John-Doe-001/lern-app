@@ -126,6 +126,10 @@ textarea{width:100%;min-height:180px;font:inherit;font-size:.9rem;border-radius:
 details.check>summary{font-family:var(--f-display);font-size:1.05rem;font-weight:600;color:var(--ink);min-height:44px;display:flex;align-items:center}
 details.check[open]{display:flex;flex-direction:column;gap:14px}
 .warnbox{background:var(--warn-bg);color:var(--ink);border-radius:12px;padding:12px 14px}
+.passage{background:var(--paper);border:2px solid var(--line);border-radius:14px;padding:14px 16px;font-size:1.05rem;line-height:1.6;display:flex;flex-direction:column;gap:6px}
+.passage h3{font-size:1.1rem}
+.q .calc.sent{font-family:var(--f-body);font-size:1.4rem;font-weight:700;line-height:1.4}
+.field input.wide{width:100%;max-width:520px;font-family:var(--f-body);font-size:1.5rem}
 </style>
 
 <div class="wrap" id="app"></div>
@@ -327,7 +331,7 @@ function kidView(app){
   const wallet=`<div class="wallet"><span class="big">★ ${n} Sterne</span>${b?`<span>Dein Abzeichen: <b>${b[1]}</b></span>`:''}
     ${nb?`<div class="meter" aria-hidden="true"><i style="width:${Math.round(100*(n-prevB)/(nb[0]-prevB))}%;background:var(--star)"></i></div><span class="muted">Noch ${nb[0]-n} Sterne bis „${nb[1]}“</span>`:'<span class="muted">Du hast alle Abzeichen!</span>'}</div>`;
   const grp={};UEB[S.kid].forEach(t=>(grp[t.grp]=grp[t.grp]||[]).push(t));
-  const ueb=['emp','fit','neu'].filter(g=>grp[g]).map(g=>`<div class="section"><span class="fach">${GRP[g]}</span>${grp[g].map(t=>{
+  const ueb=['sa','emp','fit','neu'].filter(g=>grp[g]).map(g=>`<div class="section"><span class="fach">${GRP[g]}</span>${grp[g].map(t=>{
     const u=peekU(S.kid,t.id);
     const right=u&&u.total?`<span class="lvl">Stufe ${u.lvl}<span class="lvlbar">${[1,2,3].map(i=>`<i class="${i<=u.lvl?'on':''}"></i>`).join('')}</span></span>`:'<span class="pill open">Neu</span>';
     return `<button class="topic" data-u="${t.id}"><span class="t"><b>${t.titel}</b><span class="muted">${t.kurz}</span><span class="tag">${t.fach}</span></span>${right}</button>`}).join('')}</div>`).join('');
@@ -796,12 +800,14 @@ function uebenView(app){
  let body='';
  if(f.kind==='mc')body=`<div class="opts">${f.order.map(i=>`<button class="opt${f.big?' big':''}" data-i="${i}">${esc(f.opts[i])}</button>`).join('')}</div>`;
  else if(f.kind==='num')body=`<div class="inputs"><div class="field"><label for="in0">Deine Antwort</label><input id="in0" inputmode="decimal" autocomplete="off"></div>${f.unit?`<span class="unit">${f.unit}</span>`:''}</div>`;
+ else if(f.kind==='text')body=`<div class="inputs"><div class="field" style="flex:1"><label for="in0">Your answer</label><input id="in0" class="wide" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></div></div>`;
  else if(f.kind==='time')body=`<div class="inputs"><div class="field"><label for="in0">Stunde</label><input id="in0" inputmode="numeric" autocomplete="off" class="short"></div><span class="unit">:</span><div class="field"><label for="in1">Minuten</label><input id="in1" inputmode="numeric" autocomplete="off" class="short"></div><span class="unit">Uhr</span></div>`;
  else body=`<div class="inputs"><div class="field"><label for="in0">Ergebnis</label><input id="in0" inputmode="numeric" autocomplete="off"></div><div class="field"><label for="in1">Rest</label><input id="in1" inputmode="numeric" autocomplete="off"></div></div>`;
  app.innerHTML=`<div class="top"><div><span class="fach">${t.fach} · ${t.titel}</span><p class="muted">Aufgabe ${S.n+1} von ${SESSION}</p></div>
    <div class="actions"><span class="lvl" aria-label="Stufe ${st.lvl} von 3">Stufe ${st.lvl}<span class="lvlbar">${[1,2,3].map(i=>`<i class="${i<=st.lvl?'on':''}"></i>`).join('')}</span></span><span class="starcount">★ ${S.stars}</span><button class="btn ghost small" id="pause">Pause</button></div></div>
    <div class="quiz pop">
-    <div class="q">${esc(f.q)}${f.calc?`<span class="calc">${esc(f.calc)}</span>`:''}</div>
+    ${f.passage?`<div class="passage">${f.passage}</div>`:''}
+    <div class="q">${esc(f.q)}${f.calc?`<span class="calc${f.kind==='text'?' sent':''}">${esc(f.calc)}</span>`:''}</div>
     ${body}<div id="tipbox"></div><div id="fb"></div>
     <div class="actions" id="acts"><button class="btn" id="check" disabled>Prüfen</button><button class="btn ghost" id="tip">Tipp</button><button class="link" id="skip">Weiß ich noch nicht</button></div>
    </div>`;
@@ -812,13 +818,14 @@ function uebenView(app){
   app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{if(S.checked)return;app.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');sel=+b.dataset.i;check.disabled=false});
  }else{
   const ins=[...app.querySelectorAll('input')];
-  const upd=()=>{check.disabled=ins.some(i=>parseNum(i.value)===null)};
+  const upd=()=>{check.disabled=ins.some(i=>f.kind==='text'?!i.value.trim():parseNum(i.value)===null)};
   ins.forEach(i=>{i.oninput=upd;i.onkeydown=e=>{if(e.key==='Enter'&&!check.disabled)check.click()}});
-  ins[0].focus({preventScroll:true});
+  if(!f.passage)ins[0].focus({preventScroll:true});
  }
  check.onclick=()=>{
   let ok,given;
   if(f.kind==='mc'){ok=sel===0;given=f.opts[sel]}
+  else if(f.kind==='text'){given=$('#in0').value;ok=f.a.some(x=>normEn(x)===normEn(given))}
   else if(f.kind==='num'){const v=parseNum($('#in0').value);ok=Math.abs(v-f.a)<1e-6;given=$('#in0').value}
   else{const a=parseNum($('#in0').value),b=parseNum($('#in1').value);ok=a===f.a[0]&&b===f.a[1];given=f.kind==='time'?a+':'+String(b).padStart(2,'0'):a+' Rest '+b}
   finish(ok,given,false);
@@ -840,9 +847,9 @@ function uebenView(app){
   save(DB);
   if(f.kind==='mc')app.querySelectorAll('.opt').forEach(b=>{b.disabled=true;const i=+b.dataset.i;if(i===0)b.classList.add('right');else if(i===sel)b.classList.add('wrong')});
   else app.querySelectorAll('input').forEach(i=>{i.disabled=true;i.classList.add(ok?'right':'wrong')});
-  const sol=f.kind==='num'?`Richtig ist: <b>${f.unit==='€'?eur(f.a):zahl(f.a)}${f.unit?' '+f.unit:''}</b>.<br>`:f.kind==='time'?`Richtig ist: <b>${uhr(f.a[0],f.a[1])} Uhr</b>.<br>`:f.kind==='rest'?`Richtig ist: <b>${f.a[0]} Rest ${f.a[1]}</b>.<br>`:'';
+  const sol=f.kind==='text'?`Richtig ist: <b>${esc(f.a[0])}</b>.<br>`:f.kind==='num'?`Richtig ist: <b>${f.unit==='€'?eur(f.a):zahl(f.a)}${f.unit?' '+f.unit:''}</b>.<br>`:f.kind==='time'?`Richtig ist: <b>${uhr(f.a[0],f.a[1])} Uhr</b>.<br>`:f.kind==='rest'?`Richtig ist: <b>${f.a[0]} Rest ${f.a[1]}</b>.<br>`:'';
   const fb=$('#fb');
-  if(ok)fb.innerHTML=`<div class="fb ok pop"><h3>${pick(['Richtig, super!','Genau!','Klasse, stimmt!','Richtig!'])} ★</h3>${lvMsg}<details><summary>Rechenweg ansehen</summary><p>${f.erk}</p></details></div>`;
+  if(ok)fb.innerHTML=`<div class="fb ok pop"><h3>${pick(['Richtig, super!','Genau!','Klasse, stimmt!','Richtig!'])} ★</h3>${lvMsg}<details><summary>Erklärung ansehen</summary><p>${f.erk}</p></details></div>`;
   else fb.innerHTML=`<div class="fb ${skipped?'skip':'no'} pop"><h3>${skipped?'Kein Problem, so geht es:':'Noch nicht ganz. So geht es:'}</h3><p>${sol}${f.erk}</p>${lvMsg}</div>`;
   const last=S.n===SESSION-1;
   $('#acts').innerHTML=`<button class="btn" id="next">${last?'Fertig':'Nächste Aufgabe'}</button>`;
@@ -887,6 +894,117 @@ function uebenReport(){
  }
  return lines.join('\n');
 }
+
+/* ================= ENGLISCH: Schulaufgabe 17.11. ================= */
+const PRULE={
+ sp:'Simple Present Passive: <b>am / is / are + 3. Form</b> (past participle).',
+ past:'Simple Past Passive: <b>was / were + 3. Form</b>.',
+ pp:'Present Perfect Passive: <b>has / have been + 3. Form</b>.',
+ will:'Future Passive: <b>will be + 3. Form</b>.',
+ modal:'Passive mit can / must: <b>can / must + be + 3. Form</b>.'};
+const PASS={
+ 1:[['English and French ___ (speak) in Canada.',['are spoken'],'sp'],
+  ['Maple syrup ___ (make) from the sap of maple trees.',['is made'],'sp'],
+  ['The Statue of Liberty ___ (give) to the USA by France.',['was given'],'past'],
+  ['Ice hockey ___ (play) by many children in Canada.',['is played'],'sp'],
+  ['The Golden Gate Bridge ___ (open) in 1937.',['was opened'],'past'],
+  ['Many films ___ (make) in Hollywood every year.',['are made'],'sp'],
+  ['The letters ___ (write) by my grandma last week.',['were written'],'past'],
+  ['The windows ___ (clean) every Friday.',['are cleaned'],'sp'],
+  ['My bike ___ (steal) last night.',['was stolen'],'past'],
+  ['These houses ___ (build) in 1920.',['were built'],'past'],
+  ['Breakfast ___ (serve) from 7 to 10 a.m.',['is served'],'sp'],
+  ['The first email ___ (send) in 1971.',['was sent'],'past']],
+ 2:[['The new sports hall ___ (build) next year.',['will be built'],'will'],
+  ['My bike ___ (repair). Now I can ride it again.',['has been repaired'],'pp'],
+  ['Phones ___ (must not / use) in class.',['must not be used',"mustn't be used"],'modal'],
+  ['The tickets ___ (can / buy) online.',['can be bought'],'modal'],
+  ['Two new songs ___ (release) this week.',['have been released'],'pp'],
+  ['The results ___ (send) to you tomorrow.',['will be sent'],'will'],
+  ['The homework ___ (must / finish) by Monday.',['must be finished'],'modal'],
+  ['The museum ___ (visit) by two million people so far.',['has been visited'],'pp'],
+  ['The bridge ___ (not finish) yet.',['has not been finished',"hasn't been finished"],'pp'],
+  ['The game ___ (can / watch) on TV tonight.',['can be watched'],'modal'],
+  ['The winners ___ (announce) at the end of the show.',['will be announced'],'will']],
+ 3:[['„They built the CN Tower in the 1970s.“ → The CN Tower ___ in the 1970s.',['was built'],'past'],
+  ['„Someone has broken the window.“ → The window ___.',['has been broken'],'pp'],
+  ['„They will show the film at 8 p.m.“ → The film ___ at 8 p.m.',['will be shown'],'will'],
+  ['„People must not feed the bears.“ → The bears ___.',['must not be fed',"mustn't be fed"],'modal']]};
+const PASS_MC=[
+ ['People speak Spanish in many parts of the USA.','Spanish is spoken in many parts of the USA.','Spanish was spoken in many parts of the USA.','Spanish is speak in many parts of the USA.','Spanish speaks in many parts of the USA.','sp'],
+ ['Alexander Graham Bell invented the telephone.','The telephone was invented by Alexander Graham Bell.','The telephone is invented by Alexander Graham Bell.','The telephone was invent by Alexander Graham Bell.','The telephone has invented by Alexander Graham Bell.','past'],
+ ['They will open the new park in May.','The new park will be opened in May.','The new park will opened in May.','The new park will be open in May.','The new park is opened in May.','will'],
+ ['Someone has stolen my phone!','My phone has been stolen!','My phone has stolen!','My phone was been stolen!','My phone have been stolen!','pp'],
+ ['The teacher checks our tests every week.','Our tests are checked by the teacher every week.','Our tests is checked by the teacher every week.','Our tests are check by the teacher every week.','Our tests were checked by the teacher every week.','sp'],
+ ['You must wear a helmet.','A helmet must be worn.','A helmet must be wear.','A helmet must worn.','A helmet must been worn.','modal'],
+ ['Millions of tourists visit Yellowstone National Park every year.','Yellowstone National Park is visited by millions of tourists every year.','Yellowstone National Park are visited by millions of tourists every year.','Yellowstone National Park was visit by millions of tourists every year.','Yellowstone National Park visits millions of tourists every year.','sp'],
+ ['The Spanish brought horses to North America.','Horses were brought to North America by the Spanish.','Horses was brought to North America by the Spanish.','Horses were bring to North America by the Spanish.','Horses are brought to North America by the Spanish.','past'],
+ ["We can't change the past.","The past can't be changed.","The past can't be change.","The past can't changed.","The past can't been changed.",'modal']];
+const NA={
+ 1:[['What is the capital of the USA?','Washington, D.C.',['New York','Los Angeles','Chicago']],
+  ['What is the capital of Canada?','Ottawa',['Toronto','Vancouver','Montreal']],
+  ['How many states does the USA have?','50',['52','48','51']],
+  ['What are the official languages of Canada?','English and French',['English only','English and Spanish','French only']],
+  ["What can you see on Canada's flag?",'a maple leaf',['a bear','a star','an eagle']]],
+ 2:[['Which is the largest US state by area?','Alaska',['Texas','California','Montana']],
+  ['In which US state is the Grand Canyon?','Arizona',['Colorado','Nevada','Utah']],
+  ['Which is the largest city in Canada?','Toronto',['Montreal','Vancouver','Ottawa']],
+  ['What is the capital of Mexico?','Mexico City',['Cancún','Guadalajara','Acapulco']],
+  ['Which US state is made up of islands in the Pacific Ocean?','Hawaii',['Florida','Alaska','California']]],
+ 3:[['How many Great Lakes are there?','5',['3','7','10']],
+  ['Niagara Falls are on the border between …','the USA and Canada',['the USA and Mexico','Canada and Alaska','New York and New Jersey']],
+  ['In which state is Silicon Valley?','California',['Texas','Washington','New York']],
+  ['Which country is the second largest in the world by area?','Canada',['the USA','China','Brazil']],
+  ['Where are the Rocky Mountains?','in the west of North America',['in the east of the USA','in the south of Mexico','only in Canada']]]};
+const READ={
+ 1:{title:'New in Toronto',text:"Hi, I'm Mia. I'm fifteen, and last summer my family moved from Munich to Toronto because my mum got a new job at a hospital. At first I was really nervous. My new school is huge – it has more than 1,500 students! On my first day a girl called Priya showed me around. Her parents come from India, but she was born in Toronto. Now we're best friends. Toronto is very multicultural: you can hear more than 100 languages in the city. What I miss most about Germany is the bread – and my grandma, of course. In winter it gets really cold here, sometimes minus 20 degrees, but people just go ice skating.",
+  qs:[["Why did Mia's family move to Toronto?",'Her mum got a new job.',['Her dad got a new job.','They wanted to learn English.','Her grandma lives there.']],
+   ['How did Mia feel at first?','nervous',['happy','bored','angry']],
+   ['Who is Priya?','a girl who showed Mia around and is now her best friend',["Mia's cousin from India",'a teacher at the new school','a girl Mia knew from Munich']],
+   ['Where was Priya born?','in Toronto',['in India','in Munich','in Vancouver']],
+   ['What does Mia miss most about Germany?','the bread and her grandma',['her old school','the snow','her bike']],
+   ['What do people in Toronto do when it is very cold?','They go ice skating.','They stay at home.|They fly to Florida.|They go swimming.'.split('|')]]},
+ 2:{title:'Living the dream',text:"Jake Miller, 17, from Vancouver has a dream: he wants to become a professional snowboarder. Three times a week he gets up at 5 a.m. to train on the mountains near the city before school. \"It's hard, but I love it,\" he says. Last year he was chosen for the junior team of British Columbia. His parents support him, but they also want him to finish school. \"You can't snowboard forever,\" his dad says. So Jake is also thinking about a plan B: he would like to study sports science at university. His biggest dream is to take part in the Winter Olympics one day.",
+  qs:[["What is Jake's dream?",'to become a professional snowboarder',['to become a ski teacher','to study in Europe','to move to the mountains']],
+   ['When does Jake train?','early in the morning before school',['after school every day','only at the weekend','only in the summer holidays']],
+   ['What happened last year?','He was chosen for the junior team.',['He won a medal at the Olympics.','He broke his leg.','He left school.']],
+   ['What do his parents want?','that he finishes school',['that he stops snowboarding','that he moves out','that he trains every day']],
+   ["What is Jake's plan B?",'to study sports science',['to become a doctor','to work for his dad','to open a snowboard shop']],
+   ['Which sentence from the text is in the passive?','He was chosen for the junior team.',['He gets up at 5 a.m.','His parents support him.','He would like to study sports science.']]]},
+ 3:{title:'Route 66',text:"Every summer thousands of families go on a road trip across the USA. The most famous road is Route 66. It was built in 1926 and connected Chicago with Los Angeles. It is almost 4,000 kilometres long. Today parts of it have been replaced by modern highways, but many tourists still love the old diners and motels along the way. The Smith family from Ohio drove the whole route last year. \"We were on the road for three weeks,\" says 14-year-old Emma. \"The best part was the Grand Canyon. It isn't directly on Route 66, so we made a little detour.\"",
+  qs:[['Route 66 was built in 1926.','true'],['Route 66 goes from New York to Los Angeles.','false'],['Today the whole road still looks the way it did in 1926.','false'],['The Smith family travelled for three weeks.','true'],["Emma's favourite part of the trip was the Grand Canyon.",'true'],['The Smiths slept in a tent every night.','not in the text']]}};
+const normEn=s=>String(s).toLowerCase().replace(/[’`´]/g,"'").replace(/\s+/g,' ').trim().replace(/[.!]+$/,'');
+Object.assign(GEN,{
+ passive(l){
+  if(l===3&&Math.random()<.6){const [act,ok,...rest]=pick(PASS_MC);const t=rest.pop();
+   return {kind:'mc',q:`Which sentence is the correct passive form of: „${act}“`,opts:[ok,...rest],
+    tip:'Das Objekt des Aktivsatzes wird zum Subjekt. Dann: Form von „be“ in der richtigen Zeit + 3. Form. Wer es tut, kommt mit „by“ ans Ende.',
+    erk:`Richtig: „${esc(ok)}“<br>${PRULE[t]}`}}
+  const [s,a,t]=pick(PASS[l]);
+  return {kind:'text',q:'Put in the passive form:',calc:s,a,
+   tip:'Achte auf die Zeit (Signalwörter: every, last, so far, next, tomorrow) und darauf, ob das Subjekt Einzahl oder Mehrzahl ist. Dann: Form von „be“ + 3. Form.',
+   erk:`Richtig: „${esc(s.replace('___',a[0]).replace(/ \([^)]*\)/,''))}“<br>${PRULE[t]}`};
+ },
+ na(l){
+  const [q,ok,w]=pick(NA[l]);
+  return {kind:'mc',q,opts:[ok,...w],tip:'Denk an die Karte von Nordamerika aus deinem Buch (Zoom in – North America).',erk:`Richtig: <b>${esc(ok)}</b>.`};
+ },
+ read(l){
+  const R=READ[l],qq=pick(R.qs);
+  const passage=`<h3>${R.title}</h3><p>${esc(R.text)}</p>`;
+  if(l===3)return {kind:'mc',passage,q:`True, false or not in the text? „${qq[0]}“`,opts:qq[1]==='true'?['true','false','not in the text']:qq[1]==='false'?['false','true','not in the text']:['not in the text','true','false'],
+   tip:'„false“ heißt: Der Text sagt etwas anderes. „not in the text“ heißt: Der Text sagt dazu gar nichts.',
+   erk:`Richtig: <b>${qq[1]}</b>. ${qq[1]==='not in the text'?'Im Text steht nichts darüber, wo die Familie geschlafen hat.':'Lies die passende Stelle im Text noch einmal genau.'}`};
+  return {kind:'mc',passage,q:qq[0],opts:[qq[1],...qq[2]],
+   tip:'Such im Text nach einem Wort aus der Frage. Die Antwort steht meistens in der Nähe.',
+   erk:`Richtig: <b>${esc(qq[1])}</b>. Lies die passende Stelle im Text noch einmal.`};
+ }
+});
+UEB.leonie.unshift(
+ {id:'u-passive',gen:'passive',fach:'Englisch',titel:'Passive',kurz:'is / was / has been / will be + 3. Form',grp:'sa',check:'l-englisch'},
+ {id:'u-read',gen:'read',fach:'Englisch',titel:'Reading',kurz:'Texte lesen und Fragen beantworten',grp:'sa',check:null},
+ {id:'u-na',gen:'na',fach:'Englisch',titel:'Zoom in: North America',kurz:'Länder, Städte, Landeskunde',grp:'sa',check:null});
+GRP.sa='Schulaufgabe Englisch am 17.11.';
 
 render();
 </script>
