@@ -130,6 +130,7 @@ details.check[open]{display:flex;flex-direction:column;gap:14px}
 .passage h3{font-size:1.1rem}
 .q .calc.sent{font-family:var(--f-body);font-size:1.4rem;font-weight:700;line-height:1.4}
 .field input.wide{width:100%;max-width:520px;font-family:var(--f-body);font-size:1.5rem}
+.syncurl{font:inherit;font-size:1rem;width:100%;min-height:48px;padding:8px 12px;border-radius:12px;border:2px solid var(--line);background:var(--paper);color:var(--ink)}
 </style>
 
 <div class="wrap" id="app"></div>
@@ -411,6 +412,7 @@ function quiz(app){
         const score=S.log.filter(l=>l.ok).length;
         DB[S.kid]=DB[S.kid]||{};
         DB[S.kid][S.tid]={score,total:t.fragen.length,date:Date.now(),log:S.log};
+        queueEvent({kid:KIDS[S.kid].name,art:'Lernstand-Check',fach:t.fach,topic:t.titel,right:score,total:t.fragen.length,errors:S.log.map((l,i)=>l.ok?null:t.fragen[i].q+(t.fragen[i].calc?' '+t.fragen[i].calc:'')+' | Antwort: '+l.given).filter(Boolean)});
         save(DB);go({view:'done',kid:S.kid,tid:S.tid});
       }else{S.idx++;S.checked=false;render();window.scrollTo(0,0)}
     };
@@ -462,6 +464,13 @@ function eltern(app){
       <textarea id="txt" readonly>${esc(reportText())}</textarea>
       <div class="actions"><button class="btn small" id="copy">Text kopieren</button><span id="copied" class="muted" aria-live="polite"></span></div>
     </section>
+    <section class="report"><h3>Google-Tabelle</h3>
+      <p class="muted">Ist hier die Adresse deiner Tabellen-Web-App eingetragen, schickt die App nach jeder Runde die Ergebnisse dorthin. Die Adresse wird nur auf diesem iPad gespeichert.</p>
+      <p class="${SYNC.url?'muted':'warnbox'}">${SYNC.url?`Verbunden. ${(SYNC.queue||[]).length} Einträge warten auf Versand.${SYNC.lastSent?' Zuletzt gesendet: '+new Date(SYNC.lastSent).toLocaleString('de-DE'):''}`:'Noch nicht verbunden.'}</p>
+      <label for="syncurl" class="muted">Adresse der Web-App (beginnt mit https://script.google.com/)</label>
+      <input id="syncurl" class="syncurl" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" value="${esc(SYNC.url||'')}">
+      <div class="actions"><button class="btn small" id="syncsave">Speichern und Test senden</button>${SYNC.url?'<button class="btn ghost small" id="syncoff">Verbindung trennen</button>':''}<span id="syncmsg" class="muted" aria-live="polite"></span></div>
+    </section>
     <section class="report"><h3>Sicherung</h3>
       <p class="${STORAGE_OK?'muted':'warnbox'}">${STORAGE_OK?'Speichern auf diesem Gerät funktioniert. Eine Sicherung schadet trotzdem nicht, zum Beispiel einmal pro Woche.':'<b>Speichern ist in diesem Browser blockiert.</b> Alles geht verloren, wenn Safari geschlossen wird. Prüfe, ob privates Surfen an ist. Kopiere bis dahin vor dem Schließen den Sicherungscode.'}</p>
       <textarea id="bk" readonly>${esc(backupCode())}</textarea>
@@ -478,6 +487,11 @@ function eltern(app){
     if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(ta.value).then(ok,fallback);else fallback()};
   $('#reset').onclick=()=>{$('#resetBox').innerHTML=`<span>Wirklich alle Ergebnisse löschen?</span><button class="btn small" id="yes">Ja, löschen</button><button class="btn ghost small" id="no">Abbrechen</button>`;
     $('#yes').onclick=()=>{DB={};save(DB);go({view:'eltern'})};$('#no').onclick=()=>go({view:'eltern'})};
+  $('#syncsave').onclick=()=>{const u=$('#syncurl').value.trim();
+    if(!/^https:\/\/script\.google\.com\/macros\/s\/[^\s]+\/exec$/.test(u)){$('#syncmsg').textContent='Die Adresse muss mit https://script.google.com/macros/s/ beginnen und mit /exec enden.';return}
+    SYNC.url=u;syncSave(SYNC);queueEvent({kid:'-',art:'Test',fach:'',topic:'Verbindung von '+SYNC.device,right:0,total:0,errors:[]});
+    $('#syncmsg').textContent='Gespeichert. Schau in deiner Tabelle nach, ob eine Testzeile angekommen ist.'};
+  if($('#syncoff'))$('#syncoff').onclick=()=>{delete SYNC.url;syncSave(SYNC);go({view:'eltern'})};
   $('#bkcopy').onclick=()=>{const ta=$('#bk');const ok=()=>$('#bkmsg').textContent='Kopiert. Schick ihn dir selbst per Nachricht.';
     const fb=()=>{ta.focus();ta.select();try{document.execCommand('copy');ok()}catch(e){$('#bkmsg').textContent='Code ist markiert. Lange tippen und „Kopieren“ wählen.'}};
     if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(ta.value).then(ok,fb);else fb()};
@@ -791,7 +805,7 @@ function newTask(){
  S.task=task;S.checked=false;S.tipShown=false;S.msg=null;
 }
 function startUeben(tid){
- S={view:'ueben',kid:S.kid,tid,n:0,right:0,stars:0,startStars:sterne(S.kid)};
+ S={view:'ueben',kid:S.kid,tid,n:0,right:0,stars:0,startStars:sterne(S.kid),lvlStart:ust(S.kid,tid).lvl,errs:[]};
  newTask();render();window.scrollTo(0,0);
 }
 
@@ -811,7 +825,7 @@ function uebenView(app){
     ${body}<div id="tipbox"></div><div id="fb"></div>
     <div class="actions" id="acts"><button class="btn" id="check" disabled>Prüfen</button><button class="btn ghost" id="tip">Tipp</button><button class="link" id="skip">Weiß ich noch nicht</button></div>
    </div>`;
- $('#pause').onclick=()=>{save(DB);go({view:'kid',kid:S.kid})};
+ $('#pause').onclick=()=>{save(DB);const n=S.n+(S.checked?1:0);if(n>0)sendRound(n);go({view:'kid',kid:S.kid})};
  $('#tip').onclick=()=>{S.tipShown=true;$('#tipbox').innerHTML=`<div class="fb tip pop"><h3>Tipp</h3><p>${esc(f.tip)}</p></div>`;$('#tip').remove()};
  const check=$('#check');let sel=null;
  if(f.kind==='mc'){
@@ -842,7 +856,7 @@ function uebenView(app){
   else{st.down++;st.up=0;
    if(st.down>=2&&st.lvl>1){st.lvl--;st.down=0;lvMsg=`<p>Wir gehen kurz auf Stufe ${st.lvl} zurück und üben dort weiter.</p>`}
    DB.fehler=DB.fehler||{};const L=DB.fehler[S.kid]=DB.fehler[S.kid]||[];
-   L.unshift({tid:S.tid,lvl:old,q:f.q+(f.calc?' '+f.calc:''),given,date:Date.now()});L.length=Math.min(L.length,40);
+   L.unshift({tid:S.tid,lvl:old,q:f.q+(f.calc?' '+f.calc:''),given,date:Date.now()});S.errs.push('Stufe '+old+': '+f.q+(f.calc?' '+f.calc:'')+' | Antwort: '+given);L.length=Math.min(L.length,40);
   }
   save(DB);
   if(f.kind==='mc')app.querySelectorAll('.opt').forEach(b=>{b.disabled=true;const i=+b.dataset.i;if(i===0)b.classList.add('right');else if(i===sel)b.classList.add('wrong')});
@@ -853,11 +867,13 @@ function uebenView(app){
   else fb.innerHTML=`<div class="fb ${skipped?'skip':'no'} pop"><h3>${skipped?'Kein Problem, so geht es:':'Noch nicht ganz. So geht es:'}</h3><p>${sol}${f.erk}</p>${lvMsg}</div>`;
   const last=S.n===SESSION-1;
   $('#acts').innerHTML=`<button class="btn" id="next">${last?'Fertig':'Nächste Aufgabe'}</button>`;
-  $('#next').onclick=()=>{if(last)go(Object.assign({},S,{view:'uebenDone'}));else{S.n++;newTask();render();window.scrollTo(0,0)}};
+  $('#next').onclick=()=>{if(last){sendRound(SESSION);go(Object.assign({},S,{view:'uebenDone'}))}else{S.n++;newTask();render();window.scrollTo(0,0)}};
   $('#next').focus({preventScroll:true});
  }
 }
 
+function sendRound(n){const t=UEB[S.kid].find(x=>x.id===S.tid);
+ queueEvent({kid:KIDS[S.kid].name,art:n<SESSION?'Üben (abgebrochen)':'Üben',fach:t.fach,topic:t.titel,lvlStart:S.lvlStart,lvlEnd:ust(S.kid,S.tid).lvl,right:S.right,total:n,errors:S.errs||[]})}
 function uebenDone(app){
  const t=UEB[S.kid].find(x=>x.id===S.tid),st=ust(S.kid,S.tid),now=sterne(S.kid);
  const bOld=badgeOf(S.startStars),bNew=badgeOf(now);
@@ -1005,6 +1021,27 @@ UEB.leonie.unshift(
  {id:'u-read',gen:'read',fach:'Englisch',titel:'Reading',kurz:'Texte lesen und Fragen beantworten',grp:'sa',check:null},
  {id:'u-na',gen:'na',fach:'Englisch',titel:'Zoom in: North America',kurz:'Länder, Städte, Landeskunde',grp:'sa',check:null});
 GRP.sa='Schulaufgabe Englisch am 17.11.';
+
+
+/* ---------- Versand an Google-Tabelle ---------- */
+const SYNC_KEY='lernstand-sync-v1';
+function syncCfg(){try{return JSON.parse(localStorage.getItem(SYNC_KEY))||{}}catch(e){return {}}}
+function syncSave(c){try{localStorage.setItem(SYNC_KEY,JSON.stringify(c))}catch(e){}}
+let SYNC=syncCfg();
+if(!SYNC.device){SYNC.device='ipad-'+Math.random().toString(36).slice(2,8);SYNC.queue=SYNC.queue||[];syncSave(SYNC)}
+function queueEvent(ev){SYNC.queue=SYNC.queue||[];ev.time=Date.now();SYNC.queue.push(ev);if(SYNC.queue.length>300)SYNC.queue=SYNC.queue.slice(-300);syncSave(SYNC);syncFlush()}
+let syncBusy=false;
+function syncFlush(){
+ if(!SYNC.url||syncBusy)return Promise.resolve(false);
+ const events=(SYNC.queue||[]).slice(0,50);
+ const kids=Object.keys(KIDS).filter(k=>DB[k]||((DB.ueben||{})[k])).map(k=>KIDS[k].name).join(', ');
+ const body=JSON.stringify({device:SYNC.device,events,stand:{kids,code:backupCode()}});
+ syncBusy=true;
+ return fetch(SYNC.url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body})
+  .then(()=>{SYNC.queue=(SYNC.queue||[]).slice(events.length);SYNC.lastSent=Date.now();syncSave(SYNC);return true})
+  .catch(()=>false).finally(()=>{syncBusy=false});
+}
+setTimeout(syncFlush,1500);
 
 render();
 </script>
