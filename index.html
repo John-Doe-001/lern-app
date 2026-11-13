@@ -1,0 +1,895 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Lern-App">
+<meta name="robots" content="noindex">
+<style>[hidden]{display:none!important}body{margin:0}</style>
+</head>
+<body>
+<title>Lernstand-Check</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Fredoka:wght@500;600&display=swap">
+<style>
+/* Layout: eine Spalte wie ein Schulheft auf Karopapier, große Tippflächen fürs Tablet */
+:root{
+  --paper:#F6F8F5; --grid:rgba(47,111,214,.07); --card:#FFFFFF; --ink:#1E2A3A; --muted:#5A6576; --line:#D3DCE4;
+  --marvin:#2F6FD6; --leonie:#A93C74; --accent:var(--marvin);
+  --good:#2C8653; --good-bg:#E3F3E9; --warn:#B57A06; --warn-bg:#FBF0D6; --bad:#BF3D37; --bad-bg:#FBE4E2;
+  --star:#E5A50A;
+  --f-display:"Fredoka","Trebuchet MS","Segoe UI",system-ui,sans-serif;
+  --f-body:"Andika","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#131921; --grid:rgba(110,160,240,.06); --card:#1B2430; --ink:#E7ECF2; --muted:#9BA7B6; --line:#2D3948;
+  --marvin:#76A6F2; --leonie:#E27FB2;
+  --good:#62C48F; --good-bg:#183326; --warn:#E2B04A; --warn-bg:#352A12; --bad:#F07C74; --bad-bg:#3A1C1B; --star:#F2C14E;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#131921; --grid:rgba(110,160,240,.06); --card:#1B2430; --ink:#E7ECF2; --muted:#9BA7B6; --line:#2D3948;
+  --marvin:#76A6F2; --leonie:#E27FB2;
+  --good:#62C48F; --good-bg:#183326; --warn:#E2B04A; --warn-bg:#352A12; --bad:#F07C74; --bad-bg:#3A1C1B; --star:#F2C14E;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{
+  background-color:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;
+  color:var(--ink); font-family:var(--f-body); font-size:18px; line-height:1.5; min-height:100vh;
+}
+.wrap{max-width:760px;margin:0 auto;padding-block:20px 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:20px}
+.kid-marvin{--accent:var(--marvin)} .kid-leonie{--accent:var(--leonie)}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;margin:0;text-wrap:balance;line-height:1.2}
+h1{font-size:2rem} h2{font-size:1.5rem} h3{font-size:1.15rem}
+p{margin:0}
+.muted{color:var(--muted)}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+button{font:inherit;cursor:pointer;color:inherit}
+button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btn{min-height:56px;padding:0 22px;border-radius:14px;border:2px solid var(--accent);background:var(--accent);color:var(--card);font-family:var(--f-display);font-weight:600;font-size:1.1rem}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.small{min-height:44px;font-size:1rem;padding:0 16px}
+.btn:disabled{opacity:.45;cursor:default}
+.link{background:none;border:0;color:var(--muted);text-decoration:underline;padding:8px 0;min-height:44px}
+.kids{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.kidcard{text-align:left;background:var(--card);border:2px solid var(--line);border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:10px;border-top:10px solid var(--accent)}
+.kidcard:hover{border-color:var(--accent)}
+.kidcard .name{font-family:var(--f-display);font-size:2rem;font-weight:600;color:var(--accent)}
+.meter{height:10px;border-radius:5px;background:var(--line);overflow:hidden}
+.meter>i{display:block;height:100%;background:var(--accent)}
+.section{display:flex;flex-direction:column;gap:10px}
+.fach{font-family:var(--f-display);font-size:.85rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.topic{display:flex;align-items:center;gap:14px;background:var(--card);border:2px solid var(--line);border-radius:16px;padding:14px 16px;text-align:left;width:100%}
+.topic:hover{border-color:var(--accent)}
+.topic .t{flex:1;min-width:0;display:flex;flex-direction:column}
+.topic .t b{font-weight:700}
+.stars{color:var(--star);font-size:1.3rem;letter-spacing:2px;white-space:nowrap}
+.stars .off{color:var(--line)}
+.pill{font-size:.85rem;padding:4px 10px;border-radius:999px;white-space:nowrap;font-weight:700}
+.pill.open{background:var(--line);color:var(--muted)}
+.pill.good{background:var(--good-bg);color:var(--good)} .pill.warn{background:var(--warn-bg);color:var(--warn)} .pill.bad{background:var(--bad-bg);color:var(--bad)}
+.quiz{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:20px}
+.dots{display:flex;gap:6px;flex-wrap:wrap}
+.dots i{width:14px;height:14px;border-radius:50%;background:var(--line)}
+.dots i.ok{background:var(--good)} .dots i.no{background:var(--bad)} .dots i.now{background:var(--accent)}
+.q{font-size:1.35rem;font-weight:700;line-height:1.4}
+.q .calc{font-family:var(--f-display);font-size:2.2rem;display:block;margin-top:6px;font-variant-numeric:tabular-nums}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.opt{min-height:64px;padding:12px 16px;border-radius:14px;border:2px solid var(--line);background:var(--paper);text-align:left;font-size:1.1rem;display:flex;align-items:center;justify-content:center;gap:8px}
+.opt.big{font-family:var(--f-display);font-size:2.4rem;justify-content:center}
+.opt.sel{border-color:var(--accent);background:var(--card);box-shadow:0 0 0 2px var(--accent) inset}
+.opt.right{border-color:var(--good);background:var(--good-bg)} .opt.wrong{border-color:var(--bad);background:var(--bad-bg)}
+.opt svg{max-width:100%;height:auto}
+.inputs{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:.95rem;color:var(--muted)}
+.field input{font:inherit;font-family:var(--f-display);font-size:2rem;width:200px;max-width:100%;min-height:64px;padding:4px 14px;border-radius:14px;border:2px solid var(--line);background:var(--paper);color:var(--ink);font-variant-numeric:tabular-nums}
+.field input.right{border-color:var(--good);background:var(--good-bg)} .field input.wrong{border-color:var(--bad);background:var(--bad-bg)}
+.unit{font-size:1.3rem;padding-bottom:16px}
+.actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.fb{border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:6px}
+.fb.ok{background:var(--good-bg)} .fb.no{background:var(--bad-bg)} .fb.skip{background:var(--warn-bg)}
+.fb h3{font-size:1.25rem}
+.fb.ok h3{color:var(--good)} .fb.no h3{color:var(--bad)} .fb.skip h3{color:var(--warn)}
+.done{text-align:center;align-items:center}
+.done .bigstars{font-size:3.2rem;color:var(--star);letter-spacing:6px}
+.done .bigstars .off{color:var(--line)}
+.report{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) 120px auto;gap:12px;align-items:center}
+.row .bar{height:12px;border-radius:6px;background:var(--line);overflow:hidden}
+.row .bar i{display:block;height:100%}
+.row .bar i.good{background:var(--good)} .row .bar i.warn{background:var(--warn)} .row .bar i.bad{background:var(--bad)}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+details{font-size:.95rem} summary{cursor:pointer;color:var(--muted);min-height:32px}
+details ul{margin:6px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+textarea{width:100%;min-height:180px;font:inherit;font-size:.9rem;border-radius:12px;border:2px solid var(--line);background:var(--paper);color:var(--ink);padding:12px}
+.note{font-size:.95rem;color:var(--muted);border-left:4px solid var(--line);padding-left:12px}
+@media (max-width:520px){h1{font-size:1.6rem}.row{grid-template-columns:minmax(0,1fr) auto}.row .bar{grid-column:1/-1;order:3}.q .calc{font-size:1.8rem}}
+@media (prefers-reduced-motion:no-preference){.pop{animation:pop .35s ease-out}@keyframes pop{from{transform:scale(.96)}to{transform:none}}}
+.lvl{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:.95rem;color:var(--accent)}
+.lvlbar{display:inline-flex;gap:3px}.lvlbar i{width:10px;height:18px;border-radius:3px;background:var(--line)}.lvlbar i.on{background:var(--accent)}
+.starcount{font-family:var(--f-display);font-weight:600;font-size:1.2rem;color:var(--star);font-variant-numeric:tabular-nums}
+.fb.tip{background:var(--paper);border:2px dashed var(--line)} .fb.tip h3{color:var(--accent)}
+.fb details{margin-top:4px}
+.lvup{font-weight:700;color:var(--good)}
+.field input.short{width:110px}
+.badge{display:flex;gap:14px;align-items:center;background:var(--warn-bg);border-radius:16px;padding:14px 18px;text-align:left}
+.badge span{font-size:2.4rem}
+.wallet{display:flex;flex-direction:column;gap:8px;background:var(--card);border:2px solid var(--line);border-radius:16px;padding:16px}
+.wallet .big{font-family:var(--f-display);font-size:1.6rem;font-weight:600;color:var(--star)}
+.topic .tag{font-size:.8rem;color:var(--muted)}
+details.check>summary{font-family:var(--f-display);font-size:1.05rem;font-weight:600;color:var(--ink);min-height:44px;display:flex;align-items:center}
+details.check[open]{display:flex;flex-direction:column;gap:14px}
+.warnbox{background:var(--warn-bg);color:var(--ink);border-radius:12px;padding:12px 14px}
+</style>
+
+<div class="wrap" id="app"></div>
+
+<script>
+/* ---------- Würfelnetze als kleine Zeichnung ---------- */
+function net(cells){
+  const s=26, cols=Math.max(...cells.map(c=>c[0]))+1, rows=Math.max(...cells.map(c=>c[1]))+1;
+  const r=cells.map(([x,y])=>`<rect x="${x*s+2}" y="${y*s+2}" width="${s}" height="${s}" fill="currentColor" fill-opacity=".18" stroke="currentColor" stroke-width="2"/>`).join('');
+  return `<svg viewBox="0 0 ${cols*s+4} ${rows*s+4}" width="${(cols*s+4)*1.4}" role="img" aria-label="Netz">${r}</svg>`;
+}
+
+/* ---------- Aufgaben ----------
+   mc: erste Antwort in opts ist die richtige (wird beim Anzeigen gemischt)
+   num: Zahl eintippen, a = richtige Werte
+   rest: Ergebnis und Rest eintippen */
+const KIDS={
+ marvin:{name:'Marvin',info:'4. Klasse · Grundschule',topics:[
+  {id:'m-rest',fach:'Mathe',titel:'Geteilt mit Rest',kurz:'Teilen, wenn es nicht genau aufgeht',fragen:[
+   {t:'rest',q:'Rechne:',calc:'23 : 4',a:[5,3],erk:'4 · 5 = 20. Bis 23 fehlen noch 3. Also 23 : 4 = 5 Rest 3.'},
+   {t:'rest',q:'Rechne:',calc:'47 : 6',a:[7,5],erk:'6 · 7 = 42. 47 − 42 = 5. Also 47 : 6 = 7 Rest 5.'},
+   {t:'rest',q:'Rechne:',calc:'58 : 7',a:[8,2],erk:'7 · 8 = 56. 58 − 56 = 2. Also 58 : 7 = 8 Rest 2.'},
+   {t:'rest',q:'Rechne:',calc:'81 : 9',a:[9,0],erk:'9 · 9 = 81. Das geht genau auf, der Rest ist 0.'},
+   {t:'mc',q:'Welche Rechnung ist richtig?',opts:['38 : 5 = 7 Rest 3','38 : 5 = 6 Rest 8','38 : 5 = 7 Rest 2','38 : 5 = 8 Rest 2'],erk:'5 · 7 = 35 und 38 − 35 = 3. „6 Rest 8“ geht nicht, weil der Rest immer kleiner sein muss als die Zahl, durch die du teilst (hier 5).'},
+   {t:'rest',q:'30 Kinder bilden Vierergruppen. Wie viele volle Gruppen gibt es, und wie viele Kinder bleiben übrig?',labels:['volle Gruppen','übrig'],a:[7,2],erk:'4 · 7 = 28. 30 − 28 = 2. Es gibt 7 volle Gruppen, 2 Kinder bleiben übrig.'},
+   {t:'num',q:'Oma verteilt 50 Bonbons gerecht an 6 Enkel. Wie viele Bonbons bleiben übrig?',a:[2],erk:'6 · 8 = 48. 50 − 48 = 2. Jedes Enkelkind bekommt 8 Bonbons, 2 bleiben übrig.'},
+   {t:'rest',q:'Rechne:',calc:'100 : 8',a:[12,4],erk:'8 · 12 = 96. 100 − 96 = 4. Also 100 : 8 = 12 Rest 4.'}
+  ]},
+  {id:'m-schriftlich',fach:'Mathe',titel:'Schriftlich rechnen',kurz:'Plus, Minus, Mal und Geteilt mit großen Zahlen',fragen:[
+   {t:'num',q:'Rechne (gern auf einem Zettel):',calc:'3 456 + 2 789',a:[6245],erk:'Stellen untereinander schreiben und von rechts anfangen: 6 + 9 = 15, schreibe 5, merke 1. Ergebnis: 6 245.'},
+   {t:'num',q:'Rechne (gern auf einem Zettel):',calc:'7 003 − 2 658',a:[4345],erk:'Ergebnis: 4 345. Probe: 4 345 + 2 658 = 7 003.'},
+   {t:'num',q:'Rechne:',calc:'236 · 7',a:[1652],erk:'200 · 7 = 1 400, 30 · 7 = 210, 6 · 7 = 42. Zusammen 1 652.'},
+   {t:'num',q:'Rechne:',calc:'36 · 24',a:[864],erk:'36 · 20 = 720 und 36 · 4 = 144. 720 + 144 = 864.'},
+   {t:'num',q:'Rechne:',calc:'846 : 6',a:[141],erk:'8 : 6 = 1 Rest 2, 24 : 6 = 4, 6 : 6 = 1. Ergebnis 141. Probe: 141 · 6 = 846.'},
+   {t:'num',q:'Rechne:',calc:'1 000 : 8',a:[125],erk:'8 · 125 = 1 000. Tipp: 1 000 : 2 = 500, : 2 = 250, : 2 = 125.'}
+  ]},
+  {id:'m-zahlen',fach:'Mathe',titel:'Zahlen bis 1 Million',kurz:'Lesen, vergleichen, runden',fragen:[
+   {t:'mc',q:'Welche Zahl ist am größten?',opts:['450 099','405 990','449 999','45 999'],erk:'Vergleiche von links: Bei 450 099 steht an der Zehntausenderstelle eine 5, das ist am meisten.'},
+   {t:'mc',q:'Wie schreibt man „dreihundertvierzigtausendfünf“?',opts:['340 005','340 500','304 005','345 000'],erk:'340 Tausend und 5 Einer: 340 005.'},
+   {t:'num',q:'Runde 67 482 auf Tausender.',a:[67000],erk:'Schau auf die Hunderterstelle: Sie ist 4, also wird abgerundet. Ergebnis: 67 000.'},
+   {t:'num',q:'Welche Zahl kommt direkt nach 99 999?',a:[100000],erk:'99 999 + 1 = 100 000 (hunderttausend).'}
+  ]},
+  {id:'m-geo',fach:'Mathe',titel:'Geometrie',kurz:'Körper, Formen, Umfang, Symmetrie',fragen:[
+   {t:'num',q:'Wie viele Ecken hat ein Würfel?',a:[8],erk:'Oben 4 Ecken und unten 4 Ecken, zusammen 8.'},
+   {t:'num',q:'Wie viele Kanten hat ein Würfel?',a:[12],erk:'4 Kanten oben, 4 unten und 4 senkrechte. Zusammen 12.'},
+   {t:'mc',q:'Welcher Körper hat keine Ecken und keine Kanten?',opts:['Kugel','Zylinder','Kegel','Quader'],erk:'Die Kugel ist rundherum glatt. Zylinder und Kegel haben gebogene Kanten am Rand ihrer Kreisflächen.'},
+   {t:'mc',html:true,q:'Aus welchem Netz kann man einen Würfel falten?',opts:[net([[1,0],[0,1],[1,1],[2,1],[1,2],[1,3]]),net([[0,0],[1,0],[2,0],[0,1],[1,1],[2,1]]),net([[0,0],[1,0],[0,1],[1,1],[2,1],[3,1]])],erk:'Das kreuzförmige Netz geht: Die 4 Quadrate in der Reihe werden die Seiten, die anderen beiden Deckel und Boden. Beim 2-mal-3-Rechteck und beim dritten Netz würden sich Flächen überlappen.'},
+   {t:'mc',big:true,q:'Welcher Buchstabe ist achsensymmetrisch?',opts:['A','F','G','R'],erk:'Beim A kannst du eine Spiegelachse senkrecht durch die Mitte legen. Beide Hälften sind dann gleich.'},
+   {t:'num',q:'Ein Rechteck ist 5 cm lang und 3 cm breit. Wie lang ist sein Umfang?',unit:'cm',a:[16],erk:'Der Umfang ist der Weg einmal rundherum: 5 + 3 + 5 + 3 = 16 cm.'},
+   {t:'num',q:'Ein Rechteck auf Karopapier ist 4 Kästchen lang und 3 Kästchen breit. Wie viele Kästchen liegen darin?',a:[12],erk:'3 Reihen mit je 4 Kästchen: 3 · 4 = 12.'},
+   {t:'mc',q:'Zwei Geraden, die sich nie schneiden und überall gleich weit voneinander entfernt sind, nennt man …',opts:['parallel','senkrecht','symmetrisch','gekreuzt'],erk:'Parallel heißt: immer gleicher Abstand, sie treffen sich nie. Wie die Linien in deinem Heft.'},
+   {t:'num',q:'Wie viele rechte Winkel hat ein Rechteck?',a:[4],erk:'Jede der 4 Ecken eines Rechtecks ist ein rechter Winkel.'}
+  ]},
+  {id:'m-groessen',fach:'Mathe',titel:'Größen und Sachaufgaben',kurz:'Längen, Gewichte, Zeit und Geld',fragen:[
+   {t:'num',q:'3 km 250 m sind wie viele Meter?',unit:'m',a:[3250],erk:'1 km = 1 000 m. 3 km = 3 000 m, dazu 250 m: 3 250 m.'},
+   {t:'num',q:'2 kg sind wie viele Gramm?',unit:'g',a:[2000],erk:'1 kg = 1 000 g, also 2 kg = 2 000 g.'},
+   {t:'mc',q:'Ein Film beginnt um 15:45 Uhr und dauert 1 Stunde 30 Minuten. Wann ist er zu Ende?',opts:['17:15 Uhr','16:75 Uhr','17:45 Uhr','16:15 Uhr'],erk:'15:45 + 1 Stunde = 16:45. Plus 30 Minuten: 16:45 → 17:00 sind 15 Minuten, dann noch 15 Minuten: 17:15 Uhr.'},
+   {t:'mc',q:'Du kaufst etwas für 2,35 € und bezahlst mit einem 5-€-Schein. Wie viel Rückgeld bekommst du?',opts:['2,65 €','3,65 €','2,75 €','3,35 €'],erk:'Von 2,35 € bis 3,00 € sind 65 Cent, bis 5,00 € noch 2 €. Zusammen 2,65 €.'}
+  ]},
+  {id:'m-deutsch',fach:'Deutsch',titel:'Sprache und Rechtschreibung',kurz:'Wortarten, Rechtschreibung, Zeitformen',fragen:[
+   {t:'mc',q:'Welches Wort ist ein Nomen (Namenwort)?',opts:['Freude','laufen','schnell','unter'],erk:'Nomen schreibt man groß, und man kann „die“, „der“ oder „das“ davorsetzen: die Freude.'},
+   {t:'mc',q:'Welches Wort ist ein Adjektiv (Wiewort)?',opts:['leise','Tisch','springen','und'],erk:'Adjektive sagen, wie etwas ist: leise, laut, groß.'},
+   {t:'mc',q:'Welches Wort ist richtig geschrieben?',opts:['Fahrrad','Farrad','Fahrad','Varrad'],erk:'Fahr-rad: „fahren“ mit h und „Rad“. Zusammen Fahrrad mit zwei r.'},
+   {t:'mc',q:'Welches Wort ist richtig geschrieben?',opts:['die Wiese','die Wise','die Wihse','die Wiehse'],erk:'Ein langes i schreibt man meistens als ie: Wiese.'},
+   {t:'mc',q:'Welcher Satz ist richtig geschrieben?',opts:['Am Morgen essen wir Brot.','am morgen Essen wir brot.','Am morgen essen wir brot.','Am Morgen Essen wir Brot.'],erk:'Groß schreibt man den Satzanfang und Nomen (Morgen, Brot). „essen“ ist hier ein Verb, also klein.'},
+   {t:'mc',q:'„Ich ging nach Hause.“ In welcher Zeitform steht der Satz?',opts:['Präteritum','Präsens','Perfekt','Futur'],erk:'„ging“ ist die Vergangenheitsform von „gehen“ ohne Hilfsverb. Das nennt man Präteritum.'},
+   {t:'mc',q:'Wie heißt „Wir spielen Fußball.“ im Perfekt?',opts:['Wir haben Fußball gespielt.','Wir spielten Fußball.','Wir werden Fußball spielen.','Wir hatten Fußball gespielt.'],erk:'Perfekt = „haben“ oder „sein“ + Partizip: Wir haben … gespielt.'},
+   {t:'mc',q:'„Der Hund bellt laut.“ Was ist das Subjekt?',opts:['Der Hund','bellt','laut','Der Hund bellt'],erk:'Frage: Wer oder was bellt? Der Hund. Das ist das Subjekt.'}
+  ]},
+  {id:'m-hsu',fach:'HSU',titel:'Heimat- und Sachunterricht',kurz:'Bayern, Natur, Strom, Gemeinde',fragen:[
+   {t:'mc',q:'Wie heißt die Landeshauptstadt von Bayern?',opts:['München','Nürnberg','Augsburg','Regensburg'],erk:'München ist die Landeshauptstadt. Dort sitzt der Bayerische Landtag.'},
+   {t:'mc',q:'In welcher Himmelsrichtung geht die Sonne auf?',opts:['Osten','Westen','Norden','Süden'],erk:'Die Sonne geht im Osten auf und im Westen unter.'},
+   {t:'mc',q:'Wasser wird durch die Wärme der Sonne zu Wasserdampf. Wie nennt man das?',opts:['Verdunstung','Kondensation','Versickerung','Niederschlag'],erk:'Verdunstung: Wasser wird unsichtbarer Dampf und steigt auf. Das ist ein Teil des Wasserkreislaufs.'},
+   {t:'mc',q:'Damit eine Lampe leuchtet, muss der Stromkreis …',opts:['geschlossen sein','offen sein','nass sein','kalt sein'],erk:'Nur in einem geschlossenen Stromkreis kann Strom fließen.'},
+   {t:'mc',q:'Welcher Stoff leitet Strom?',opts:['Kupfer','Holz','Gummi','Kunststoff'],erk:'Metalle wie Kupfer leiten Strom. Holz, Gummi und Kunststoff sind Isolatoren.'},
+   {t:'mc',q:'Wer leitet eine Gemeinde und wird von den Bürgerinnen und Bürgern gewählt?',opts:['die Bürgermeisterin oder der Bürgermeister','die Schulleitung','die Polizei','der Pfarrer'],erk:'Die Bürgerinnen und Bürger wählen den Bürgermeister oder die Bürgermeisterin und den Gemeinderat.'}
+  ]}
+ ]},
+ leonie:{name:'Leonie',info:'8. Klasse · Realschule',topics:[
+  {id:'l-bruch',fach:'Mathe',titel:'Brüche, Dezimalzahlen, Prozent',kurz:'Grundlagen aus Klasse 6 und 7',fragen:[
+   {t:'mc',q:'Berechne:',calc:'3/4 + 1/6',opts:['11/12','4/10','4/24','10/12'],erk:'Hauptnenner 12: 3/4 = 9/12 und 1/6 = 2/12. Zusammen 11/12.'},
+   {t:'mc',q:'Berechne und kürze:',calc:'2/3 · 9/10',opts:['3/5','11/13','2/5','27/20'],erk:'Zähler mal Zähler, Nenner mal Nenner: 18/30. Mit 6 gekürzt: 3/5.'},
+   {t:'num',q:'Berechne:',calc:'0,4 · 0,3',a:[0.12],erk:'4 · 3 = 12, und das Ergebnis hat so viele Nachkommastellen wie beide Faktoren zusammen (2): 0,12.'},
+   {t:'mc',q:'Berechne:',calc:'−7 − (−3)',opts:['−4','−10','4','10'],erk:'Minus minus wird plus: −7 + 3 = −4.'},
+   {t:'num',q:'Wie viel sind 20 % von 85 €?',unit:'€',a:[17],erk:'10 % von 85 € sind 8,50 €, also sind 20 % 17 €.'},
+   {t:'num',q:'Ein Pulli kostet statt 60 € nur noch 45 €. Um wie viel Prozent wurde er reduziert?',unit:'%',a:[25],erk:'Ersparnis 15 €. 15 / 60 = 0,25 = 25 %.'}
+  ]},
+  {id:'l-terme',fach:'Mathe',titel:'Terme und Gleichungen',kurz:'Vereinfachen, ausmultiplizieren, lösen',fragen:[
+   {t:'mc',q:'Vereinfache:',calc:'4a + 3b − a + 2b',opts:['3a + 5b','4a + 5b','3a + b','5a + 5b'],erk:'Gleiche Variablen zusammenfassen: 4a − a = 3a und 3b + 2b = 5b.'},
+   {t:'mc',q:'Multipliziere aus:',calc:'2(3x − 5)',opts:['6x − 10','6x − 5','5x − 10','6x + 10'],erk:'Jedes Glied in der Klammer mal 2: 2 · 3x = 6x und 2 · (−5) = −10.'},
+   {t:'mc',q:'Berechne:',calc:'(−3) · (−4)',opts:['12','−12','−7','7'],erk:'Minus mal minus ergibt plus: 12.'},
+   {t:'num',q:'Löse die Gleichung. x = ?',calc:'3x + 7 = 22',a:[5],erk:'Minus 7 auf beiden Seiten: 3x = 15. Durch 3: x = 5.'},
+   {t:'num',q:'Löse die Gleichung. x = ?',calc:'5(x − 2) = 3x + 4',a:[7],erk:'Ausmultiplizieren: 5x − 10 = 3x + 4. Minus 3x: 2x − 10 = 4. Plus 10: 2x = 14. Also x = 7.'},
+   {t:'mc',q:'Multipliziere aus:',calc:'(x + 3)(x − 3)',opts:['x² − 9','x² + 9','x² − 6x − 9','x² + 6x − 9'],erk:'Dritte binomische Formel: (a + b)(a − b) = a² − b². Also x² − 9.'}
+  ]},
+  {id:'l-funktion',fach:'Mathe',titel:'Zuordnungen und Funktionen',kurz:'Proportional, antiproportional, linear',fragen:[
+   {t:'num',q:'3 kg Äpfel kosten 7,50 €. Wie viel kosten 5 kg?',unit:'€',a:[12.5],erk:'1 kg kostet 7,50 € : 3 = 2,50 €. 5 kg kosten 12,50 €.'},
+   {t:'num',q:'4 Maler brauchen für eine Wand 6 Tage. Wie viele Tage brauchen 3 gleich schnelle Maler?',unit:'Tage',a:[8],erk:'Antiproportional: 4 · 6 = 24 Maler-Tage. 24 : 3 = 8 Tage.'},
+   {t:'mc',q:'Welche Zuordnung ist proportional?',opts:['Anzahl Brötchen → Preis','Alter eines Kindes → Körpergröße','Anzahl Arbeiter → benötigte Zeit','Seitenlänge eines Quadrats → Flächeninhalt'],erk:'Doppelt so viele Brötchen kosten doppelt so viel. Bei den anderen stimmt das nicht.'},
+   {t:'num',q:'Gegeben ist y = 2x − 3. Welchen Wert hat y für x = 4?',a:[5],erk:'2 · 4 − 3 = 8 − 3 = 5.'},
+   {t:'num',q:'Eine Gerade geht durch die Punkte (0|1) und (2|5). Wie groß ist ihre Steigung m?',a:[2],erk:'m = (5 − 1) : (2 − 0) = 4 : 2 = 2.'}
+  ]},
+  {id:'l-geo',fach:'Mathe',titel:'Geometrie',kurz:'Winkel, Flächen, Volumen, Dreiecke',fragen:[
+   {t:'num',q:'Ein Dreieck hat die Winkel 50° und 65°. Wie groß ist der dritte Winkel?',unit:'°',a:[65],erk:'Die Innenwinkel im Dreieck ergeben 180°. 180° − 50° − 65° = 65°.'},
+   {t:'num',q:'Dreieck mit Grundseite g = 8 cm und Höhe h = 5 cm. Wie groß ist der Flächeninhalt?',unit:'cm²',a:[20],erk:'A = g · h : 2 = 8 · 5 : 2 = 20 cm².'},
+   {t:'num',q:'Trapez mit a = 6 cm, c = 4 cm und h = 3 cm. Wie groß ist der Flächeninhalt?',unit:'cm²',a:[15],erk:'A = (a + c) : 2 · h = 10 : 2 · 3 = 15 cm².'},
+   {t:'num',q:'Ein Quader ist 5 cm lang, 4 cm breit und 3 cm hoch. Wie groß ist sein Volumen?',unit:'cm³',a:[60],erk:'V = l · b · h = 5 · 4 · 3 = 60 cm³.'},
+   {t:'mc',q:'Welche Angaben legen ein Dreieck NICHT eindeutig fest?',opts:['drei Winkel (WWW)','drei Seiten (SSS)','zwei Seiten und der Winkel dazwischen (SWS)','eine Seite und die zwei anliegenden Winkel (WSW)'],erk:'Mit drei Winkeln kann man beliebig große Dreiecke zeichnen, die alle gleich aussehen, aber verschieden groß sind. Das ist kein Kongruenzsatz.'}
+  ]},
+  {id:'l-deutsch',fach:'Deutsch',titel:'Grammatik und Texte',kurz:'Grammatik, Zeichensetzung, Stilmittel',fragen:[
+   {t:'mc',q:'Ergänze: „Ich hoffe, ___ du morgen kommst.“',opts:['dass','das','daß','dass,'],erk:'„dass“ leitet einen Nebensatz ein. Probe: „das“ kann man durch „dieses“ oder „welches“ ersetzen, hier geht das nicht.'},
+   {t:'mc',q:'Ergänze: „Das Buch, ___ ich gerade lese, ist spannend.“',opts:['das','dass','was','den'],erk:'Relativpronomen: „das Buch, welches ich lese“. Also „das“.'},
+   {t:'mc',q:'Ergänze: „Wir warten ___ zwei Stunden.“',opts:['seit','seid','seith','seidt'],erk:'„seit“ ist eine Zeitangabe. „seid“ kommt von „sein“ (ihr seid).'},
+   {t:'mc',q:'Welcher Satz ist richtig gesetzt?',opts:['Weil es regnet, bleiben wir zu Hause.','Weil es regnet bleiben wir, zu Hause.','Weil, es regnet bleiben wir zu Hause.','Weil es, regnet, bleiben wir zu Hause.'],erk:'Der Nebensatz „Weil es regnet“ wird mit einem Komma vom Hauptsatz getrennt.'},
+   {t:'mc',q:'Indirekte Rede: Er sagt: „Ich habe keine Zeit.“',opts:['Er sagt, er habe keine Zeit.','Er sagt, ich habe keine Zeit.','Er sagt, er hatte keine Zeit gehabt.','Er sagt, er haben keine Zeit.'],erk:'In der indirekten Rede steht der Konjunktiv I, und das Pronomen wird angepasst: er habe.'},
+   {t:'mc',q:'„Der Brief wird geschrieben.“ Welche Form ist das?',opts:['Passiv Präsens','Aktiv Präsens','Passiv Präteritum','Aktiv Perfekt'],erk:'„werden“ + Partizip II = Passiv. „wird“ steht im Präsens.'},
+   {t:'mc',q:'„Das Leben ist eine Reise.“ Welches Stilmittel ist das?',opts:['Metapher','Vergleich','Alliteration','Personifikation'],erk:'Eine Metapher ist ein bildlicher Ausdruck ohne „wie“. Mit „wie“ (Das Leben ist wie eine Reise) wäre es ein Vergleich.'},
+   {t:'mc',q:'Wie heißt die Textform, in der man Pro- und Kontra-Argumente abwägt und zu einem Urteil kommt?',opts:['Erörterung','Inhaltsangabe','Bericht','Schilderung'],erk:'In der (dialektischen) Erörterung stellt man Argumente für und gegen etwas gegenüber.'}
+  ]},
+  {id:'l-englisch',fach:'Englisch',titel:'Grammatik und Wortschatz',kurz:'Zeiten, if-clauses, Passiv, Vokabeln',fragen:[
+   {t:'mc',q:'I ___ that film last week.',opts:['saw','have seen','see','was seeing'],erk:'„last week“ ist ein abgeschlossener Zeitpunkt in der Vergangenheit, also Simple Past: saw.'},
+   {t:'mc',q:'She ___ in London since 2020.',opts:['has lived','lives','lived','is living'],erk:'„since“ + etwas, das bis heute andauert: Present Perfect (has lived).'},
+   {t:'mc',q:'If it rains tomorrow, we ___ at home.',opts:['will stay','would stay','stayed','stay will'],erk:'If-clause Typ 1: if + Simple Present, dann will + Infinitiv.'},
+   {t:'mc',q:'If I had more time, I ___ more books.',opts:['would read','will read','read','am reading'],erk:'If-clause Typ 2: if + Simple Past, dann would + Infinitiv.'},
+   {t:'mc',q:'The house ___ in 1990.',opts:['was built','built','is build','has built'],erk:'Passiv in der Vergangenheit: was/were + 3. Form (built).'},
+   {t:'mc',q:'The girl ___ lives next door is my friend.',opts:['who','which','what','whose'],erk:'Für Personen nimmt man das Relativpronomen „who“.'},
+   {t:'mc',q:'He said, "I am tired." In reported speech:',opts:['He said that he was tired.','He said that I am tired.','He said that he is being tired.','He said that he were tired.'],erk:'Backshift: am wird zu was, und I wird zu he.'},
+   {t:'mc',q:'Have you got ___ questions?',opts:['any','some','a','much'],erk:'In Fragen und verneinten Sätzen nimmt man meistens „any“.'},
+   {t:'mc',q:'What does „reliable“ mean?',opts:['zuverlässig','erleichtert','verwandt','bereit'],erk:'reliable = zuverlässig. „relieved“ wäre erleichtert, „related“ verwandt.'}
+  ]},
+  {id:'l-physik',fach:'Physik',titel:'Grundlagen',kurz:'Kraft, Bewegung, Dichte, Energie, Strom',fragen:[
+   {t:'mc',q:'In welcher Einheit misst man eine Kraft?',opts:['Newton (N)','Kilogramm (kg)','Joule (J)','Watt (W)'],erk:'Kraft in Newton. kg ist die Masse, Joule die Energie, Watt die Leistung.'},
+   {t:'mc',q:'Was ändert sich, wenn du auf dem Mond stehst?',opts:['Die Gewichtskraft wird kleiner, die Masse bleibt gleich.','Die Masse wird kleiner, die Gewichtskraft bleibt gleich.','Beides wird kleiner.','Nichts ändert sich.'],erk:'Die Masse (kg) ist überall gleich. Die Gewichtskraft (N) hängt von der Anziehung ab, und die ist auf dem Mond etwa sechsmal kleiner.'},
+   {t:'num',q:'Ein Auto fährt 120 km in 2 Stunden. Wie groß ist seine Durchschnittsgeschwindigkeit?',unit:'km/h',a:[60],erk:'v = s : t = 120 km : 2 h = 60 km/h.'},
+   {t:'num',q:'Ein Läufer schafft 100 m in 20 s. Wie schnell ist er?',unit:'m/s',a:[5],erk:'v = 100 m : 20 s = 5 m/s.'},
+   {t:'num',q:'Ein Stein hat die Masse 200 g und das Volumen 50 cm³. Wie groß ist seine Dichte?',unit:'g/cm³',a:[4],erk:'ρ = m : V = 200 g : 50 cm³ = 4 g/cm³.'},
+   {t:'num',q:'An einem Hebel wirkt links eine Kraft von 10 N in 30 cm Abstand. Wie groß muss die Kraft rechts in 15 cm Abstand sein, damit Gleichgewicht herrscht?',unit:'N',a:[20],erk:'Hebelgesetz: 10 N · 30 cm = F · 15 cm. F = 300 : 15 = 20 N.'},
+   {t:'num',q:'Durch einen Widerstand von 10 Ω fließt ein Strom von 0,5 A. Wie groß ist die Spannung?',unit:'V',a:[5],erk:'U = R · I = 10 Ω · 0,5 A = 5 V.'},
+   {t:'mc',q:'Welche Aussage über Energie stimmt?',opts:['Energie kann nur umgewandelt werden, nicht erzeugt oder vernichtet.','Energie geht beim Bremsen verloren und ist dann weg.','Ein Kraftwerk erzeugt Energie aus dem Nichts.','Energie gibt es nur in Batterien.'],erk:'Energieerhaltung: Beim Bremsen wird Bewegungsenergie zum Beispiel in Wärme umgewandelt. Insgesamt bleibt sie gleich.'}
+  ]}
+ ]}
+};
+
+/* ---------- Speicher ---------- */
+const KEY='lernstand-check-v1';
+const STORAGE_OK=(()=>{try{localStorage.setItem(KEY+'-test','1');const ok=localStorage.getItem(KEY+'-test')==='1';localStorage.removeItem(KEY+'-test');return ok}catch(e){return false}})();
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return {}}}
+function save(d){try{localStorage.setItem(KEY,JSON.stringify(d))}catch(e){}}
+function backupCode(){return 'LERN1:'+btoa(unescape(encodeURIComponent(JSON.stringify(DB))))}
+function readBackup(code){code=String(code).replace(/\s/g,'');if(!code.startsWith('LERN1:'))throw new Error('format');const d=JSON.parse(decodeURIComponent(escape(atob(code.slice(6)))));if(!d||typeof d!=='object')throw new Error('format');return d}
+let DB=load();
+function res(kid,tid){return (DB[kid]||{})[tid]}
+
+/* ---------- Hilfen ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function parseNum(s){s=String(s).trim().replace(/\s| /g,'').replace(/[−–]/g,'-').replace(/\.(?=\d{3}(\D|$))/g,'').replace(',','.');if(s===''||isNaN(s))return null;return parseFloat(s)}
+function pct(r){return r?Math.round(100*r.score/r.total):0}
+function level(p){return p>=80?'good':p>=50?'warn':'bad'}
+const LEVEL_TXT={good:'sitzt gut',warn:'noch üben',bad:'Schwerpunkt'};
+function starCount(p){return p>=90?3:p>=70?2:p>=40?1:0}
+function starsHtml(n,cls='stars'){return `<span class="${cls}" aria-label="${n} von 3 Sternen">${'★'.repeat(n)}<span class="off">${'★'.repeat(3-n)}</span></span>`}
+const fmtDate=d=>new Date(d).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});
+
+/* ---------- Ansichten ---------- */
+let S={view:'home'};
+function go(v){S=Object.assign({},v);render();window.scrollTo(0,0)}
+
+function render(){
+  const app=$('#app');app.className='wrap'+(S.kid?' kid-'+S.kid:'');
+  if(S.view==='home')return home(app);
+  if(S.view==='kid')return kidView(app);
+  if(S.view==='quiz')return quiz(app);
+  if(S.view==='done')return done(app);
+  if(S.view==='eltern')return eltern(app);
+  if(S.view==='ueben')return uebenView(app);
+  if(S.view==='uebenDone')return uebenDone(app);
+}
+
+function home(app){
+  const cards=Object.entries(KIDS).map(([k,K])=>{
+    const n=K.topics.length,d=K.topics.filter(t=>res(k,t.id)).length;
+    return `<button class="kidcard kid-${k}" data-kid="${k}">
+      <span class="name">${K.name}</span><span class="muted">${K.info}</span>
+      <div class="meter" aria-hidden="true"><i style="width:${100*d/n}%"></i></div>
+      <span>★ ${sterne(k)} Sterne${badgeOf(sterne(k))?' · '+badgeOf(sterne(k))[1]:''}</span></button>`}).join('');
+  app.innerHTML=`<div class="top"><h1>Wer lernt heute?</h1></div>
+    <p class="muted">Tippe auf deinen Namen. Du übst mit Aufgaben, die immer wieder neu sind und zu dir passen. Für jede richtige Antwort gibt es einen Stern. Es gibt keine Noten.</p>
+    ${STORAGE_OK?'':'<p class="warnbox"><b>Achtung:</b> Dieser Browser speichert die Ergebnisse nicht dauerhaft. Bitte sag Mama oder Papa Bescheid.</p>'}<div class="kids">${cards}</div>
+    <div class="actions"><button class="link" id="toEltern">Für Eltern: Auswertung ansehen</button></div>`;
+  app.querySelectorAll('[data-kid]').forEach(b=>b.onclick=()=>go({view:'kid',kid:b.dataset.kid}));
+  $('#toEltern').onclick=()=>go({view:'eltern'});
+}
+
+function kidView(app){
+  const K=KIDS[S.kid],n=sterne(S.kid),b=badgeOf(n),nb=nextBadge(n);
+  const prevB=nb?(b?b[0]:0):0;
+  const wallet=`<div class="wallet"><span class="big">★ ${n} Sterne</span>${b?`<span>Dein Abzeichen: <b>${b[1]}</b></span>`:''}
+    ${nb?`<div class="meter" aria-hidden="true"><i style="width:${Math.round(100*(n-prevB)/(nb[0]-prevB))}%;background:var(--star)"></i></div><span class="muted">Noch ${nb[0]-n} Sterne bis „${nb[1]}“</span>`:'<span class="muted">Du hast alle Abzeichen!</span>'}</div>`;
+  const grp={};UEB[S.kid].forEach(t=>(grp[t.grp]=grp[t.grp]||[]).push(t));
+  const ueb=['emp','fit','neu'].filter(g=>grp[g]).map(g=>`<div class="section"><span class="fach">${GRP[g]}</span>${grp[g].map(t=>{
+    const u=peekU(S.kid,t.id);
+    const right=u&&u.total?`<span class="lvl">Stufe ${u.lvl}<span class="lvlbar">${[1,2,3].map(i=>`<i class="${i<=u.lvl?'on':''}"></i>`).join('')}</span></span>`:'<span class="pill open">Neu</span>';
+    return `<button class="topic" data-u="${t.id}"><span class="t"><b>${t.titel}</b><span class="muted">${t.kurz}</span><span class="tag">${t.fach}</span></span>${right}</button>`}).join('')}</div>`).join('');
+  const groups={};K.topics.forEach(t=>(groups[t.fach]=groups[t.fach]||[]).push(t));
+  const done=K.topics.filter(t=>res(S.kid,t.id)).length;
+  const check=Object.entries(groups).map(([f,ts])=>`<div class="section"><span class="fach">${f}</span>${ts.map(t=>{
+    const r=res(S.kid,t.id);
+    const right=r?starsHtml(starCount(pct(r))):`<span class="pill open">${t.fragen.length} Aufgaben</span>`;
+    return `<button class="topic" data-t="${t.id}"><span class="t"><b>${t.titel}</b><span class="muted">${t.kurz}</span></span>${right}</button>`}).join('')}</div>`).join('');
+  app.innerHTML=`<div class="top"><h1>Hallo ${K.name}!</h1><button class="btn ghost small" id="back">Zurück</button></div>
+    ${wallet}
+    <p class="muted">Eine Runde hat ${SESSION} Aufgaben. Wenn du dreimal hintereinander richtig liegst, geht es eine Stufe höher.</p>
+    ${ueb}
+    <details class="check"><summary>Lernstand-Check (${done} von ${K.topics.length} Themen gemacht)</summary>${check}</details>`;
+  $('#back').onclick=()=>go({view:'home'});
+  app.querySelectorAll('[data-u]').forEach(b=>b.onclick=()=>startUeben(b.dataset.u));
+  app.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>startQuiz(b.dataset.t));
+}
+
+function topicOf(kid,tid){return KIDS[kid].topics.find(t=>t.id===tid)}
+function startQuiz(tid){
+  const t=topicOf(S.kid,tid);
+  const order=t.fragen.map(f=>f.t==='mc'?shuffle(f.opts.map((o,i)=>i)):null);
+  go({view:'quiz',kid:S.kid,tid,idx:0,log:[],order,checked:false});
+}
+
+function quiz(app){
+  const t=topicOf(S.kid,S.tid),f=t.fragen[S.idx],n=t.fragen.length;
+  const dots=t.fragen.map((_,i)=>{const l=S.log[i];return `<i class="${l?(l.ok?'ok':'no'):(i===S.idx?'now':'')}"></i>`}).join('');
+  let body='';
+  if(f.t==='mc'){
+    body=`<div class="opts">${S.order[S.idx].map(i=>`<button class="opt${f.big?' big':''}" data-i="${i}">${f.html?f.opts[i]:esc(f.opts[i])}</button>`).join('')}</div>`;
+  }else if(f.t==='num'){
+    body=`<div class="inputs"><div class="field"><label for="in0">Deine Antwort</label><input id="in0" inputmode="decimal" autocomplete="off"></div>${f.unit?`<span class="unit">${f.unit}</span>`:''}</div>`;
+  }else{
+    const L=f.labels||['Ergebnis','Rest'];
+    body=`<div class="inputs"><div class="field"><label for="in0">${L[0]}</label><input id="in0" inputmode="numeric" autocomplete="off"></div><div class="field"><label for="in1">${L[1]}</label><input id="in1" inputmode="numeric" autocomplete="off"></div></div>`;
+  }
+  app.innerHTML=`<div class="top"><div><span class="fach">${t.fach} · ${t.titel}</span><p class="muted">Aufgabe ${S.idx+1} von ${n}</p></div><button class="btn ghost small" id="pause">Pause</button></div>
+    <div class="quiz pop"><div class="dots" aria-hidden="true">${dots}</div>
+      <div class="q">${esc(f.q)}${f.calc?`<span class="calc">${esc(f.calc)}</span>`:''}</div>
+      ${body}<div id="fb"></div>
+      <div class="actions" id="acts"><button class="btn" id="check" disabled>Prüfen</button><button class="btn ghost" id="skip">Weiß ich noch nicht</button></div>
+    </div>`;
+  $('#pause').onclick=()=>go({view:'kid',kid:S.kid});
+  const check=$('#check');let sel=null;
+  if(f.t==='mc'){
+    app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{if(S.checked)return;app.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');sel=+b.dataset.i;check.disabled=false});
+  }else{
+    const ins=[...app.querySelectorAll('input')];
+    const upd=()=>{check.disabled=ins.some(i=>parseNum(i.value)===null)};
+    ins.forEach(i=>{i.oninput=upd;i.onkeydown=e=>{if(e.key==='Enter'&&!check.disabled)check.click()}});
+    ins[0].focus({preventScroll:true});
+  }
+  check.onclick=()=>{
+    let ok,given;
+    if(f.t==='mc'){ok=sel===0;given=f.html?'(Bild '+(S.order[S.idx].indexOf(sel)+1)+')':f.opts[sel]}
+    else if(f.t==='num'){const v=parseNum($('#in0').value);ok=f.a.some(a=>Math.abs(a-v)<1e-9);given=$('#in0').value}
+    else{const q=parseNum($('#in0').value),r=parseNum($('#in1').value);ok=q===f.a[0]&&r===f.a[1];given=q+' Rest '+r}
+    finish(ok,given,false);
+  };
+  $('#skip').onclick=()=>finish(false,'weiß ich noch nicht',true);
+
+  function finish(ok,given,skipped){
+    S.checked=true;S.log[S.idx]={ok,given,skipped};
+    if(f.t==='mc'){app.querySelectorAll('.opt').forEach(b=>{b.disabled=true;const i=+b.dataset.i;if(i===0)b.classList.add('right');else if(i===sel)b.classList.add('wrong')})}
+    else app.querySelectorAll('input').forEach(i=>{i.disabled=true;i.classList.add(ok?'right':'wrong')});
+    const sol=f.t==='mc'?'':(f.t==='num'?`Richtig ist: <b>${String(f.a[0]).replace('.',',')}${f.unit?' '+f.unit:''}</b>. `:`Richtig ist: <b>${f.a[0]} Rest ${f.a[1]}</b>. `);
+    const fb=$('#fb');
+    if(ok)fb.innerHTML=`<div class="fb ok pop"><h3>Richtig, super!</h3><p>${esc(f.erk)}</p></div>`;
+    else if(skipped)fb.innerHTML=`<div class="fb skip pop"><h3>Kein Problem, genau dafür ist der Test da.</h3><p>${sol}${esc(f.erk)}</p></div>`;
+    else fb.innerHTML=`<div class="fb no pop"><h3>Noch nicht ganz.</h3><p>${sol}${esc(f.erk)}</p></div>`;
+    const last=S.idx===t.fragen.length-1;
+    $('#acts').innerHTML=`<button class="btn" id="next">${last?'Fertig':'Weiter'}</button>`;
+    $('#next').onclick=()=>{
+      if(last){
+        const score=S.log.filter(l=>l.ok).length;
+        DB[S.kid]=DB[S.kid]||{};
+        DB[S.kid][S.tid]={score,total:t.fragen.length,date:Date.now(),log:S.log};
+        save(DB);go({view:'done',kid:S.kid,tid:S.tid});
+      }else{S.idx++;S.checked=false;render();window.scrollTo(0,0)}
+    };
+    $('#next').focus({preventScroll:true});
+  }
+}
+
+function done(app){
+  const t=topicOf(S.kid,S.tid),r=res(S.kid,S.tid),p=pct(r),n=starCount(p);
+  const msg=n===3?'Das kannst du richtig gut!':n===2?'Schon ziemlich gut!':n===1?'Ein guter Anfang. Das üben wir zusammen.':'Gut, dass wir das jetzt wissen. Das üben wir in kleinen Schritten.';
+  app.innerHTML=`<div class="quiz done pop"><span class="fach">${t.fach} · ${t.titel}</span>${starsHtml(n,'bigstars')}
+    <h2>${msg}</h2><p class="num">${r.score} von ${r.total} Aufgaben richtig</p>
+    <div class="actions" style="justify-content:center"><button class="btn" id="more">Nächstes Thema</button><button class="btn ghost" id="home">Fertig für heute</button></div></div>`;
+  $('#more').onclick=()=>go({view:'kid',kid:S.kid});
+  $('#home').onclick=()=>go({view:'home'});
+}
+
+function reportText(){
+  const lines=['Lernstand-Check, Stand '+fmtDate(Date.now()),''];
+  for(const [k,K] of Object.entries(KIDS)){
+    lines.push(K.name+' ('+K.info+')');
+    for(const t of K.topics){
+      const r=res(k,t.id);
+      if(!r){lines.push('- '+t.fach+' / '+t.titel+': noch nicht gemacht');continue}
+      const p=pct(r);
+      lines.push('- '+t.fach+' / '+t.titel+': '+r.score+'/'+r.total+' ('+p+' %, '+LEVEL_TXT[level(p)]+')');
+      r.log.forEach((l,i)=>{if(!l.ok){const f=t.fragen[i];lines.push('    falsch: '+f.q+(f.calc?' '+f.calc:'')+' | Antwort: '+l.given)}});
+    }
+    lines.push('');
+  }
+  return lines.join('\n')+uebenReport();
+}
+
+function eltern(app){
+  const blocks=Object.entries(KIDS).map(([k,K])=>{
+    const rows=K.topics.map(t=>{
+      const r=res(k,t.id);
+      if(!r)return `<div class="row"><span>${t.fach}: ${t.titel}</span><span class="bar"><i style="width:0"></i></span><span class="pill open">offen</span></div>`;
+      const p=pct(r),lv=level(p);
+      const wrong=r.log.map((l,i)=>l.ok?'':`<li>${esc(t.fragen[i].q)} ${t.fragen[i].calc?esc(t.fragen[i].calc):''} <span class="muted">(Antwort: ${esc(l.given)})</span></li>`).join('');
+      return `<div class="row"><span>${t.fach}: ${t.titel} <span class="muted num">· ${r.score}/${r.total} · ${fmtDate(r.date)}</span></span><span class="bar"><i class="${lv}" style="width:${p}%"></i></span><span class="pill ${lv}">${LEVEL_TXT[lv]}</span></div>
+        ${wrong?`<details><summary>Falsch oder nicht gewusst anzeigen</summary><ul>${wrong}</ul></details>`:''}`}).join('');
+    return `<section class="report kid-${k}"><h2 style="color:var(--accent)">${K.name} <span class="muted" style="font-size:1rem;font-family:var(--f-body);font-weight:400">${K.info} · ★ ${sterne(k)} Sterne</span></h2><span class="fach">Üben</span>${uebenRows(k)}${fehlerList(k)}<span class="fach">Lernstand-Check</span>${rows}</section>`}).join('');
+  app.innerHTML=`<div class="top"><h1>Auswertung für Eltern</h1><button class="btn ghost small" id="back">Zurück</button></div>
+    <p class="note">Grün ab 80 % richtig, gelb ab 50 %, rot darunter. Beim Üben steigt die Stufe nach drei richtigen Antworten hintereinander und sinkt nach zwei falschen. Die Ergebnisse sind nur auf diesem Gerät gespeichert.</p>
+    ${blocks}
+    <section class="report"><h3>Ergebnis an Claude weitergeben</h3>
+      <p class="muted">Kopiere diesen Text und füge ihn im Projekt-Chat ein. Daraus baue ich die passenden Übungen.</p>
+      <textarea id="txt" readonly>${esc(reportText())}</textarea>
+      <div class="actions"><button class="btn small" id="copy">Text kopieren</button><span id="copied" class="muted" aria-live="polite"></span></div>
+    </section>
+    <section class="report"><h3>Sicherung</h3>
+      <p class="${STORAGE_OK?'muted':'warnbox'}">${STORAGE_OK?'Speichern auf diesem Gerät funktioniert. Eine Sicherung schadet trotzdem nicht, zum Beispiel einmal pro Woche.':'<b>Speichern ist in diesem Browser blockiert.</b> Alles geht verloren, wenn Safari geschlossen wird. Prüfe, ob privates Surfen an ist. Kopiere bis dahin vor dem Schließen den Sicherungscode.'}</p>
+      <textarea id="bk" readonly>${esc(backupCode())}</textarea>
+      <div class="actions"><button class="btn small" id="bkcopy">Sicherungscode kopieren</button><span id="bkmsg" class="muted" aria-live="polite"></span></div>
+      <label for="bkin" class="muted">Sicherung einspielen: Code hier einfügen</label>
+      <textarea id="bkin" style="min-height:90px"></textarea>
+      <div class="actions" id="bkbox"><button class="btn ghost small" id="bkload">Sicherung einspielen</button></div>
+    </section>
+    <section class="report"><h3>Neu anfangen</h3><p class="muted">Löscht alle Ergebnisse, Übungsstände und Sterne auf diesem Gerät.</p>
+      <div class="actions" id="resetBox"><button class="btn ghost small" id="reset">Ergebnisse löschen</button></div></section>`;
+  $('#back').onclick=()=>go({view:'home'});
+  $('#copy').onclick=()=>{const ta=$('#txt');const ok=()=>$('#copied').textContent='Kopiert.';
+    const fallback=()=>{ta.focus();ta.select();try{document.execCommand('copy');ok()}catch(e){$('#copied').textContent='Text ist markiert. Jetzt lange tippen und „Kopieren“ wählen.'}};
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(ta.value).then(ok,fallback);else fallback()};
+  $('#reset').onclick=()=>{$('#resetBox').innerHTML=`<span>Wirklich alle Ergebnisse löschen?</span><button class="btn small" id="yes">Ja, löschen</button><button class="btn ghost small" id="no">Abbrechen</button>`;
+    $('#yes').onclick=()=>{DB={};save(DB);go({view:'eltern'})};$('#no').onclick=()=>go({view:'eltern'})};
+  $('#bkcopy').onclick=()=>{const ta=$('#bk');const ok=()=>$('#bkmsg').textContent='Kopiert. Schick ihn dir selbst per Nachricht.';
+    const fb=()=>{ta.focus();ta.select();try{document.execCommand('copy');ok()}catch(e){$('#bkmsg').textContent='Code ist markiert. Lange tippen und „Kopieren“ wählen.'}};
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(ta.value).then(ok,fb);else fb()};
+  $('#bkload').onclick=()=>{let d;try{d=readBackup($('#bkin').value)}catch(e){$('#bkbox').innerHTML='<span class="warnbox">Der Code ist unvollständig oder falsch. Bitte den ganzen Code einfügen, er beginnt mit LERN1:</span><button class="btn ghost small" id="bkback">OK</button>';$('#bkback').onclick=()=>go({view:'eltern'});return}
+    $('#bkbox').innerHTML='<span>Die Sicherung ersetzt alle Ergebnisse und Sterne auf diesem Gerät. Fortfahren?</span><button class="btn small" id="bkyes">Ja, einspielen</button><button class="btn ghost small" id="bkno">Abbrechen</button>';
+    $('#bkyes').onclick=()=>{DB=d;save(DB);go({view:'eltern'})};$('#bkno').onclick=()=>go({view:'eltern'})};
+}
+
+/* ================= ÜBEN: Aufgaben-Generatoren ================= */
+const ri=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const gcd=(a,b)=>b?gcd(b,a%b):a;
+function zahl(n){
+  const neg=n<0;n=Math.abs(n);
+  let [i,d]=String(Math.round(n*1000)/1000).split('.');
+  if(i.length>=4)i=i.replace(/\B(?=(\d{3})+(?!\d))/g,' ');
+  return (neg?'−':'')+i+(d?','+d:'');
+}
+const eur=n=>(Math.round(n*100)%100?(Math.round(n*100)/100).toFixed(2).replace('.',','):zahl(n));
+const uhr=(h,m)=>h+':'+String(m).padStart(2,'0');
+const kl=n=>n<0?'('+zahl(n)+')':zahl(n);
+function lin(a,b){
+  let s='';
+  if(a!==0)s=(a===1?'':a===-1?'−':zahl(a))+'x';
+  if(b!==0){if(s)s+=(b>0?' + ':' − ')+zahl(Math.abs(b));else s=zahl(b)}
+  return s||'0';
+}
+const pl=(n,e,m)=>n===1?e:m;
+
+const GEN={
+/* ---------- Marvin ---------- */
+ mal(l){
+  if(l===3&&Math.random()<.5){
+   let a,b;do{a=ri(12,49);b=ri(12,39)}while(b%10===0);
+   const z=b-b%10,e=b%10;
+   return {kind:'num',q:'Rechne (gern auf einem Zettel):',calc:`${a} · ${b}`,a:a*b,
+    tip:`Zerlege die zweite Zahl: Rechne ${a} · ${z} und ${a} · ${e} und zähle beides zusammen.`,
+    erk:`${a} · ${b} = ${a} · ${z} + ${a} · ${e} = ${zahl(a*z)} + ${zahl(a*e)} = <b>${zahl(a*b)}</b>.`};
+  }
+  const a=l===1?ri(12,98):l===2?ri(102,989):ri(1002,4999),b=ri(3,9);
+  const names=['Einer','Zehner','Hunderter','Tausender'],ds=String(a).split('').reverse().map(Number);
+  let c=0;const st=[];
+  ds.forEach((d,i)=>{
+   const p=d*b+c,last=i===ds.length-1;
+   let s=`${names[i]}: ${d} · ${b} = ${d*b}`+(c?` + ${c} Übertrag = ${p}`:'');
+   if(last)s+=`, schreibe ${p}`;else s+=`, schreibe ${p%10}`+(p>=10?`, merke ${Math.floor(p/10)}`:'');
+   c=Math.floor(p/10);st.push(s);
+  });
+  return {kind:'num',q:'Rechne (gern auf einem Zettel):',calc:`${zahl(a)} · ${b}`,a:a*b,
+   tip:'Fang bei den Einern an. Den Übertrag schreibst du klein auf und zählst ihn bei der nächsten Stelle dazu.',
+   erk:st.join('.<br>')+`.<br>Ergebnis: <b>${zahl(a*b)}</b>.`};
+ },
+ zeit(l){
+  const typ=l===3?pick(['add','add','dauer']):'add';
+  if(typ==='dauer'){
+   let h1,m1,dur;do{h1=ri(7,15);m1=pick([10,15,20,25,30,35,40,45,50,55]);dur=ri(5,30)*5}while(m1+dur<60);
+   const end=h1*60+m1+dur,h2=Math.floor(end/60),m2=end%60;
+   const ctx=pick([['Ein Ausflug geht von','bis','Wie viele Minuten dauert er?'],['Das Fußballtraining geht von','bis','Wie viele Minuten dauert es?'],['Ihr fahrt um','los und kommt um','an. Wie viele Minuten dauert die Fahrt?']]);
+   const parts=[`Von ${uhr(h1,m1)} bis ${uhr(h1+1,0)} sind es ${60-m1} min.`];
+   if(h2-(h1+1)>0)parts.push(`Von ${uhr(h1+1,0)} bis ${uhr(h2,0)} sind es ${(h2-h1-1)*60} min.`);
+   if(m2>0)parts.push(`Von ${uhr(h2,0)} bis ${uhr(h2,m2)} sind es ${m2} min.`);
+   return {kind:'num',q:`${ctx[0]} ${uhr(h1,m1)} Uhr ${ctx[1]} ${uhr(h2,m2)} Uhr${ctx[2].startsWith('an')?' ':'. '}${ctx[2]}`,unit:'min',a:dur,
+    tip:'Rechne in Schritten: erst bis zur nächsten vollen Stunde, dann die vollen Stunden, dann die restlichen Minuten.',
+    erk:parts.join('<br>')+`<br>Zusammen: <b>${dur} min</b>.`};
+  }
+  let h,m,H=0,d=0;
+  if(l===1){h=ri(7,17);m=pick([0,5,10,15,20,25,30]);if(Math.random()<.5)H=ri(1,3);else d=pick([10,15,20,25])}
+  else if(l===2){h=ri(7,18);m=pick([35,40,45,50,55]);d=pick([15,20,25,30,35,40,45]);while(m+d<60)d+=5}
+  else{h=ri(7,17);m=pick([30,35,40,45,50,55]);H=ri(1,2);d=pick([20,25,30,35,40,45]);while(m+d<60)d+=5}
+  const tot=(h+H)*60+m+d,eh=Math.floor(tot/60),em=tot%60;
+  const dauer=(H?`${H} ${pl(H,'Stunde','Stunden')}`:'')+(H&&d?' ':'')+(d?`${d} Minuten`:'');
+  const ctx=pick([['Der Film beginnt um','und dauert','Wann ist er zu Ende?'],['Das Training fängt um','an und dauert','Wann ist es vorbei?'],['Ihr fahrt um','los. Die Fahrt dauert','Wann kommt ihr an?']]);
+  const st=[];let ch=h;
+  if(H){st.push(`Erst die vollen Stunden: ${uhr(h,m)} + ${H} h = ${uhr(h+H,m)} Uhr.`);ch=h+H}
+  if(d){if(m+d<60)st.push(`${uhr(ch,m)} + ${d} min = ${uhr(ch,m+d)} Uhr.`);
+   else{const bis=60-m;st.push(`Von ${uhr(ch,m)} bis zur vollen Stunde (${uhr(ch+1,0)}) sind es ${bis} min.`);st.push(`Von den ${d} min bleiben noch ${d-bis} min übrig.`)}}
+  return {kind:'time',q:`${ctx[0]} ${uhr(h,m)} Uhr ${ctx[1]} ${dauer}. ${ctx[2]}`,a:[eh,em],
+   tip:'Rechne zuerst die vollen Stunden dazu. Dann die Minuten: Wie viele fehlen bis zur vollen Stunde?',
+   erk:st.join('<br>')+`<br>Ende: <b>${uhr(eh,em)} Uhr</b>.`};
+ },
+ gross(l){
+  const R={
+   nomen:'Nomen schreibt man groß. Probe: Du kannst „der“, „die“ oder „das“ davorsetzen.',
+   verb:'Das ist ein Verb (Tunwort): Es sagt, was jemand tut. Verben schreibt man klein.',
+   adj:'Das ist ein Adjektiv (Wiewort): Es sagt, wie etwas ist. Adjektive schreibt man klein.',
+   zeitk:'Zeitangaben wie „morgen“, „heute“ oder „montags“ schreibt man klein.',
+   am:'Nach „am“ steht ein Nomen: am Morgen, am Abend, am Sonntag. Deshalb groß.',
+   heute:'Nach „heute“, „gestern“ oder „morgen“ wird die Tageszeit großgeschrieben: heute Abend, gestern Morgen.',
+   nomin:'Steht „das“, „beim“, „zum“, „etwas“ oder „alles“ davor, wird das Wort zum Nomen und wird großgeschrieben.',
+   zu:'Nach „zu“ steht ein Verb in der Grundform. Es bleibt klein.'};
+  const P={1:[['Der ___ bellt laut.','Hund',1,'nomen'],['Wir gehen in den ___.','Wald',1,'nomen'],['Meine ___ backt einen Kuchen.','Oma',1,'nomen'],['Im ___ ist es kalt.','Winter',1,'nomen'],['Ich trinke ein Glas ___.','Milch',1,'nomen'],['Die ___ scheint hell.','Sonne',1,'nomen'],['Lisa ___ schnell nach Hause.','läuft',0,'verb'],['Der Ball ist ___.','rund',0,'adj'],['Wir ___ ein Lied.','singen',0,'verb'],['Das Wasser ist sehr ___.','kalt',0,'adj']],
+   2:[['Wir ___ heute Nudeln.','essen',0,'verb'],['Das ___ schmeckt lecker.','Essen',1,'nomen'],['Am ___ gehen wir schwimmen.','Morgen',1,'am'],['Wir gehen ___ schwimmen.','morgen',0,'zeitk'],['Wir ___ mit dem Rad zur Schule.','fahren',0,'verb'],['Die ___ dauert zwei Stunden.','Fahrt',1,'nomen'],['Am ___ besuchen wir Opa.','Sonntag',1,'am'],['Ich ___ jeden Abend ein Buch.','lese',0,'verb'],['Am ___ ist es dunkel.','Abend',1,'am'],['Mein Bruder ___ sehr gut.','malt',0,'verb']],
+   3:[['Beim ___ habe ich mir wehgetan.','Laufen',1,'nomin'],['Das ___ macht mir Spaß.','Lesen',1,'nomin'],['Ich wünsche dir alles ___.','Gute',1,'nomin'],['Wir haben etwas ___ erlebt.','Schönes',1,'nomin'],['Zum ___ brauche ich einen Stift.','Malen',1,'nomin'],['Wir gehen ___ zum Sport.','montags',0,'zeitk'],['Im Sommer gehe ich gern ___.','schwimmen',0,'verb'],['Ich habe keine Lust, heute zu ___.','putzen',0,'zu'],['Heute ___ treffen wir uns.','Abend',1,'heute'],['Wir haben viel ___ gelernt.','Neues',1,'nomin']]};
+  const [s,w,up,r]=pick(P[l]);
+  const other=up?w[0].toLowerCase()+w.slice(1):w[0].toUpperCase()+w.slice(1);
+  return {kind:'mc',big:true,q:'Groß oder klein? '+s,opts:[w,other],
+   tip:'Frag dich: Kann man „der“, „die“ oder „das“ davorsetzen? Oder steht „das“, „beim“, „zum“, „am“ davor?',
+   erk:`Richtig ist: „${esc(s.replace('___',w))}“<br>${R[r]}`};
+ },
+ rest(l){
+  if(l<3){
+   const d=ri(3,9),q=l===1?ri(2,9):ri(11,40),r=ri(0,d-1),n=d*q+r;
+   let erk;
+   if(l===1)erk=`${d} · ${q} = ${d*q}. ${n} − ${d*q} = ${r}. Also ${n} : ${d} = <b>${q} Rest ${r}</b>.`;
+   else{const big=d*(q-q%10);erk=`Zerlege: ${n} = ${big} + ${n-big}.<br>${big} : ${d} = ${big/d}.<br>${n-big} : ${d} = ${q-big/d} Rest ${r}.<br>Zusammen: <b>${q} Rest ${r}</b>.`}
+   return {kind:'rest',q:'Rechne:',calc:`${n} : ${d}`,a:[q,r],
+    tip:l===1?`Welche Zahl aus der ${d}er-Reihe passt am besten, ohne zu groß zu sein? Der Rest muss kleiner als ${d} sein.`:'Zerlege die große Zahl in einen Teil, der gut aufgeht (z. B. Zehner), und den Rest.',erk};
+  }
+  const d=ri(3,8),q=ri(4,12),r=ri(1,d-1),n=d*q+r,t=pick(['auf','ab','rest']);
+  if(t==='auf')return {kind:'num',q:`${n} Kinder fahren zu einem Ausflug. In jedes Auto passen ${d} Kinder. Wie viele Autos braucht man mindestens?`,unit:'Autos',a:q+1,
+   tip:'Rechne geteilt mit Rest. Überleg dann: Was passiert mit den Kindern, die übrig bleiben?',
+   erk:`${n} : ${d} = ${q} Rest ${r}. ${q} Autos sind voll, aber ${r} ${pl(r,'Kind braucht','Kinder brauchen')} noch einen Platz. Also braucht man <b>${q+1} Autos</b>.`};
+  if(t==='ab')return {kind:'num',q:`Ihr habt ${n} Eier. In eine Schachtel passen ${d} Eier. Wie viele Schachteln könnt ihr ganz voll machen?`,unit:'Schachteln',a:q,
+   tip:'Rechne geteilt mit Rest. Gefragt sind nur die vollen Schachteln.',
+   erk:`${n} : ${d} = ${q} Rest ${r}. ${q} Schachteln werden voll, ${r} ${pl(r,'Ei bleibt','Eier bleiben')} übrig. Also <b>${q} volle Schachteln</b>.`};
+  return {kind:'num',q:`${n} Murmeln werden gerecht an ${d} Kinder verteilt. Wie viele Murmeln bleiben übrig?`,a:r,
+   tip:'Rechne geteilt mit Rest. Gefragt ist nur der Rest.',
+   erk:`${n} : ${d} = ${q} Rest ${r}. Jedes Kind bekommt ${q} Murmeln, <b>${r}</b> ${pl(r,'bleibt','bleiben')} übrig.`};
+ },
+ flaeche(l){
+  if(l===1){const a=ri(4,12),b=ri(2,a-1);
+   return {kind:'num',q:`Ein Rechteck ist ${a} cm lang und ${b} cm breit. Wie lang ist sein Umfang?`,unit:'cm',a:2*(a+b),
+    tip:'Der Umfang ist der Weg einmal rundherum. Ein Rechteck hat zwei lange und zwei kurze Seiten.',
+    erk:`${a} + ${b} + ${a} + ${b} = <b>${2*(a+b)} cm</b>.`}}
+  if(l===2){
+   if(Math.random()<.5){const a=ri(3,9),b=ri(2,8);
+    return {kind:'num',q:`Ein Rechteck auf Karopapier ist ${a} Kästchen lang und ${b} Kästchen breit. Wie viele Kästchen liegen darin?`,unit:'Kästchen',a:a*b,
+     tip:'Wie viele Reihen gibt es, und wie viele Kästchen sind in jeder Reihe?',
+     erk:`${b} Reihen mit je ${a} Kästchen: ${b} · ${a} = <b>${a*b}</b>.`}}
+   const s=ri(3,15);
+   return {kind:'num',q:`Ein Quadrat hat die Seitenlänge ${s} cm. Wie lang ist sein Umfang?`,unit:'cm',a:4*s,
+    tip:'Ein Quadrat hat 4 gleich lange Seiten.',erk:`4 · ${s} cm = <b>${4*s} cm</b>.`}}
+  const a=ri(3,12),b=ri(2,10),U=2*(a+b);
+  return {kind:'num',q:`Ein Rechteck hat einen Umfang von ${U} cm. Eine Seite ist ${a} cm lang. Wie lang ist die andere Seite?`,unit:'cm',a:b,
+   tip:'Eine lange und eine kurze Seite zusammen sind genau die Hälfte vom Umfang.',
+   erk:`Die Hälfte vom Umfang: ${U} : 2 = ${a+b} cm. Das sind beide Seiten zusammen. ${a+b} − ${a} = <b>${b} cm</b>.`};
+ },
+/* ---------- Leonie ---------- */
+ prozent(l){
+  if(l===1){
+   const p=pick([10,20,25,50,5,75]),k=100/gcd(p,100),G=ri(Math.max(1,Math.ceil(20/k)),Math.floor(400/k))*k,W=G*p/100;
+   const T={10:`10 % sind ein Zehntel: ${eur(G)} : 10 = ${eur(W)}.`,20:`10 % sind ${eur(G/10)} €, 20 % sind das Doppelte: ${eur(W)}.`,25:`25 % sind ein Viertel: ${eur(G)} : 4 = ${eur(W)}.`,50:`50 % sind die Hälfte: ${eur(G)} : 2 = ${eur(W)}.`,5:`10 % sind ${eur(G/10)} €, 5 % sind die Hälfte davon: ${eur(W)}.`,75:`25 % sind ${eur(G/4)} €, 75 % sind das Dreifache: ${eur(W)}.`};
+   return {kind:'num',q:`Wie viel sind ${p} % von ${eur(G)} €?`,unit:'€',a:W,
+    tip:'Nutze bekannte Anteile: 10 % = ein Zehntel, 25 % = ein Viertel, 50 % = die Hälfte.',
+    erk:T[p]+`<br>Allgemein: W = G · p : 100 = ${eur(G)} · ${p} : 100 = <b>${eur(W)} €</b>.`};
+  }
+  if(l===2){
+   let G,p,W;do{G=pick([20,25,40,50,80,120,200,250,300,400,500]);p=pick([5,10,15,20,25,30,40,60,75]);W=G*p/100}while(W%1);
+   if(Math.random()<.5)return {kind:'num',q:`Von ${G} Schülerinnen fahren ${W} mit dem Bus. Wie viel Prozent sind das?`,unit:'%',a:p,
+    tip:'Prozentsatz = Teil : Ganzes · 100.',erk:`p = W : G · 100 = ${W} : ${G} · 100 = ${zahl(W/G)} · 100 = <b>${p} %</b>.`};
+   return {kind:'num',q:`Eine Jacke kostet statt ${eur(G)} € nur noch ${eur(G-W)} €. Um wie viel Prozent wurde sie reduziert?`,unit:'%',a:p,
+    tip:'Rechne zuerst aus, wie viel Euro du sparst. Dann: Ersparnis : alter Preis · 100.',
+    erk:`Ersparnis: ${eur(G)} − ${eur(G-W)} = ${eur(W)} €.<br>${eur(W)} : ${eur(G)} = ${zahl(W/G)} = <b>${p} %</b>.`};
+  }
+  const t=pick(['grund','rabatt','plus']);
+  if(t==='grund'){let G,p,W;do{G=ri(20,32);p=pick([10,20,25,50,75]);W=G*p/100}while(W%1);
+   return {kind:'num',q:`${p} % einer Klasse sind ${W} Schülerinnen. Wie viele Schülerinnen sind in der Klasse?`,a:G,
+    tip:'Gesucht ist das Ganze (100 %). Rechne zuerst aus, wie viel 1 % ist, oder nimm G = W · 100 : p.',
+    erk:`G = W · 100 : p = ${W} · 100 : ${p} = <b>${G}</b>.<br>Probe: ${p} % von ${G} = ${W}.`}}
+  let G,p,W;do{G=pick([40,60,80,120,150,200,240,300,450,500,800]);p=pick([10,15,20,25,30,40]);W=G*p/100}while(W%1);
+  if(t==='rabatt')return {kind:'num',q:`Ein Fahrrad kostet ${eur(G)} €. Es gibt ${p} % Rabatt. Was kostet es jetzt?`,unit:'€',a:G-W,
+   tip:'Rechne erst aus, wie viel der Rabatt in Euro ist, und zieh ihn ab. Oder: Neuer Preis = (100 − p) % vom alten Preis.',
+   erk:`Rabatt: ${p} % von ${eur(G)} € = ${eur(W)} €.<br>${eur(G)} − ${eur(W)} = <b>${eur(G-W)} €</b>.<br>Oder kürzer: ${100-p} % von ${eur(G)} €.`};
+  return {kind:'num',q:`Ein Konzertticket kostet ${eur(G)} €. Der Preis steigt um ${p} %. Wie viel kostet es danach?`,unit:'€',a:G+W,
+   tip:'Rechne aus, wie viel die Erhöhung in Euro ist, und zähl sie dazu.',
+   erk:`Erhöhung: ${p} % von ${eur(G)} € = ${eur(W)} €.<br>${eur(G)} + ${eur(W)} = <b>${eur(G+W)} €</b>.`};
+ },
+ gleich(l){
+  const x=ri(1,10);
+  const tail=(A,B,D)=>{ /* löst A·x + B = D */
+   const s=[];let c=D;
+   if(B!==0){c=D-B;s.push(`${B>0?'| − '+zahl(B):'| + '+zahl(-B)} auf beiden Seiten: ${lin(A,0)} = ${A===1?'<b>'+zahl(c)+'</b>':zahl(c)}`)}
+   if(A===1&&B!==0)return s;
+   if(A!==1)s.push(`| : ${zahl(A)}: x = ${zahl(c)} : ${zahl(A)} = <b>${zahl(c/A)}</b>`);else s.push(`x = <b>${zahl(c)}</b>`);
+   return s;
+  };
+  if(l===1){const a=ri(2,9),b=ri(1,20)*pick([1,-1]),c=a*x+b;
+   return {kind:'num',q:'Löse die Gleichung. x = ?',calc:`${lin(a,b)} = ${zahl(c)}`,a:x,
+    tip:'Rechne rückwärts: Zuerst die Zahl ohne x auf die andere Seite bringen, dann durch die Zahl vor dem x teilen.',
+    erk:tail(a,b,c).join('<br>')+`<br>Probe: ${a} · ${x} ${b>0?'+':'−'} ${Math.abs(b)} = ${zahl(c)}.`}}
+  if(l===2){const a=ri(3,9),c=ri(1,a-1),b=ri(-12,12),d=(a-c)*x+b;
+   return {kind:'num',q:'Löse die Gleichung. x = ?',calc:`${lin(a,b)} = ${lin(c,d)}`,a:x,
+    tip:'Bring alle x auf die linke Seite und alle Zahlen auf die rechte. Was du links machst, machst du auch rechts.',
+    erk:[`| − ${lin(c,0)} auf beiden Seiten: ${lin(a-c,b)} = ${zahl(d)}`,...tail(a-c,b,d)].join('<br>')}}
+  const a=ri(2,6),bb=ri(1,6),c=ri(1,a-1),d=a*(x-bb)-c*x;
+  return {kind:'num',q:'Löse die Gleichung. x = ?',calc:`${a}(x − ${bb}) = ${lin(c,d)}`,a:x,
+   tip:'Zuerst die Klammer ausmultiplizieren: Jedes Glied in der Klammer mal die Zahl davor.',
+   erk:[`Klammer auflösen: ${lin(a,-a*bb)} = ${lin(c,d)}`,`| − ${lin(c,0)} auf beiden Seiten: ${lin(a-c,-a*bb)} = ${zahl(d)}`,...tail(a-c,-a*bb,d)].join('<br>')};
+ },
+ gerade(l){
+  const M=[-3,-2,-1,1,2,3,4];
+  if(l===1){const m=pick(M),t=ri(-5,5),x=ri(-3,5),y=m*x+t;
+   return {kind:'num',q:`Gegeben ist y = ${lin(m,t)}. Welchen Wert hat y für x = ${zahl(x)}?`,a:y,
+    tip:'Setze die Zahl für x ein und rechne aus. Punkt vor Strich.',
+    erk:`y = ${zahl(m)} · ${kl(x)}${t?(t>0?' + ':' − ')+Math.abs(t):''} = ${zahl(m*x)}${t?(t>0?' + ':' − ')+Math.abs(t):''} = <b>${zahl(y)}</b>.`}}
+  if(l===2){const m=pick(M),x1=ri(-3,3),dx=ri(1,4),y1=ri(-4,4),x2=x1+dx,y2=y1+m*dx;
+   return {kind:'num',q:`Eine Gerade geht durch die Punkte A(${zahl(x1)}|${zahl(y1)}) und B(${zahl(x2)}|${zahl(y2)}). Wie groß ist ihre Steigung m?`,a:m,
+    tip:'Steigung = Höhenunterschied : Seitenunterschied, also m = (y₂ − y₁) : (x₂ − x₁).',
+    erk:`m = (${zahl(y2)} − ${kl(y1)}) : (${zahl(x2)} − ${kl(x1)}) = ${zahl(y2-y1)} : ${dx} = <b>${zahl(m)}</b>.`}}
+  const m=pick(M),t=ri(-6,6);let x;do{x=ri(-3,4)}while(x===0);const y=m*x+t;
+  return {kind:'num',q:`Eine Gerade hat die Steigung m = ${zahl(m)} und geht durch den Punkt P(${zahl(x)}|${zahl(y)}). Wie groß ist t (der y-Achsenabschnitt)?`,a:t,
+   tip:'Setze die Koordinaten von P in y = mx + t ein und löse nach t auf.',
+   erk:`${zahl(y)} = ${zahl(m)} · ${kl(x)} + t<br>${zahl(y)} = ${zahl(m*x)} + t<br>t = ${zahl(y)} − ${kl(m*x)} = <b>${zahl(t)}</b>.`};
+ },
+ geo(l){
+  if(l===1){
+   if(Math.random()<.5){let a,b,c;do{a=ri(30,95);b=ri(20,120);c=180-a-b}while(c<15);
+    return {kind:'num',q:`Ein Dreieck hat die Winkel α = ${a}° und β = ${b}°. Wie groß ist γ?`,unit:'°',a:c,
+     tip:'Alle drei Innenwinkel eines Dreiecks ergeben zusammen 180°.',erk:`180° − ${a}° − ${b}° = <b>${c}°</b>.`}}
+   const a=ri(3,14),b=ri(2,12);
+   return {kind:'num',q:`Ein Rechteck ist ${a} cm lang und ${b} cm breit. Wie groß ist sein Flächeninhalt?`,unit:'cm²',a:a*b,
+    tip:'Flächeninhalt Rechteck = Länge · Breite.',erk:`A = ${a} cm · ${b} cm = <b>${a*b} cm²</b>.`};
+  }
+  if(l===2){
+   if(Math.random()<.6){let g,h;do{g=ri(3,14);h=ri(2,12)}while((g*h)%2);
+    return {kind:'num',q:`Ein Dreieck hat die Grundseite g = ${g} cm und die Höhe h = ${h} cm. Wie groß ist sein Flächeninhalt?`,unit:'cm²',a:g*h/2,
+     tip:'A = g · h : 2. Das Dreieck ist genau halb so groß wie ein Rechteck mit den Seiten g und h.',
+     erk:`A = g · h : 2 = ${g} · ${h} : 2 = ${g*h} : 2 = <b>${g*h/2} cm²</b>.<br>Ohne „: 2“ hättest du die Fläche des ganzen Rechtecks.`}}
+   const g=ri(3,14),h=ri(2,10);
+   return {kind:'num',q:`Ein Parallelogramm hat die Grundseite g = ${g} cm und die Höhe h = ${h} cm. Wie groß ist sein Flächeninhalt?`,unit:'cm²',a:g*h,
+    tip:'Schneidet man an einer Seite ein Dreieck ab und legt es auf der anderen Seite an, entsteht ein Rechteck. A = g · h.',
+    erk:`A = g · h = ${g} · ${h} = <b>${g*h} cm²</b>.`};
+  }
+  if(Math.random()<.5){let a,c,h;do{a=ri(5,14);c=ri(2,a-1);h=ri(2,10)}while(((a+c)*h)%2);
+   return {kind:'num',q:`Ein Trapez hat die parallelen Seiten a = ${a} cm und c = ${c} cm und die Höhe h = ${h} cm. Wie groß ist sein Flächeninhalt?`,unit:'cm²',a:(a+c)*h/2,
+    tip:'A = (a + c) : 2 · h. Man nimmt den Mittelwert der beiden parallelen Seiten und rechnet mal die Höhe.',
+    erk:`A = (${a} + ${c}) : 2 · ${h} = ${a+c} : 2 · ${h} = ${zahl((a+c)/2)} · ${h} = <b>${zahl((a+c)*h/2)} cm²</b>.`}}
+  const a=ri(2,10),b=ri(2,8),c=ri(2,9);
+  return {kind:'num',q:`Ein Quader ist ${a} cm lang, ${b} cm breit und ${c} cm hoch. Wie groß ist sein Volumen?`,unit:'cm³',a:a*b*c,
+   tip:'Volumen Quader = Länge · Breite · Höhe.',erk:`V = ${a} · ${b} · ${c} = <b>${a*b*c} cm³</b>.`};
+ },
+ physik(l){
+  if(l===1){
+   if(Math.random()<.5){const v=pick([30,40,50,60,80,90,100,120]),t=ri(2,4),s=v*t;
+    return {kind:'num',q:`Ein Zug fährt ${s} km in ${t} Stunden. Wie groß ist seine Durchschnittsgeschwindigkeit?`,unit:'km/h',a:v,
+     tip:'Geschwindigkeit = Weg : Zeit, also v = s : t.',erk:`v = s : t = ${s} km : ${t} h = <b>${v} km/h</b>.`}}
+   const v=ri(2,10),t=pick([10,20,25,50]),s=v*t;
+   return {kind:'num',q:`Eine Radfahrerin fährt ${s} m in ${t} s. Wie schnell ist sie?`,unit:'m/s',a:v,
+    tip:'Geschwindigkeit = Weg : Zeit, also v = s : t.',erk:`v = s : t = ${s} m : ${t} s = <b>${v} m/s</b>.`};
+  }
+  if(l===2){const r=pick([1,2,3,4,7,8,11]),V=ri(5,40),m=r*V;
+   if(Math.random()<.6)return {kind:'num',q:`Ein Körper hat die Masse ${m} g und das Volumen ${V} cm³. Wie groß ist seine Dichte?`,unit:'g/cm³',a:r,
+    tip:'Dichte = Masse : Volumen (ρ = m : V). Sie sagt, wie viel Gramm 1 cm³ wiegt.',erk:`ρ = m : V = ${m} g : ${V} cm³ = <b>${r} g/cm³</b>.`};
+   return {kind:'num',q:`Ein Stoff hat die Dichte ${r} g/cm³. Wie schwer sind ${V} cm³ davon?`,unit:'g',a:m,
+    tip:'Die Dichte sagt, wie viel Gramm 1 cm³ wiegt. Also m = ρ · V.',erk:`m = ρ · V = ${r} g/cm³ · ${V} cm³ = <b>${m} g</b>.`};
+  }
+  if(Math.random()<.5){let F1,a1,a2,F2;do{F1=pick([5,10,20,30,40]);a1=pick([10,20,30,40,60]);a2=pick([10,15,20,30,40,60]);F2=F1*a1/a2}while(a1===a2||F2%1);
+   return {kind:'num',q:`An einem Hebel wirkt links eine Kraft von ${F1} N in ${a1} cm Abstand vom Drehpunkt. Wie groß muss die Kraft rechts in ${a2} cm Abstand sein, damit Gleichgewicht herrscht?`,unit:'N',a:F2,
+    tip:'Hebelgesetz: Kraft · Abstand links = Kraft · Abstand rechts.',
+    erk:`${F1} N · ${a1} cm = F · ${a2} cm<br>${F1*a1} = F · ${a2}<br>F = ${F1*a1} : ${a2} = <b>${zahl(F2)} N</b>.`}}
+  const R=pick([5,10,20,50,100]),I=pick([0.1,0.2,0.5,1,2]),U=Math.round(R*I*100)/100;
+  if(Math.random()<.5)return {kind:'num',q:`Durch einen Widerstand von ${R} Ω fließt ein Strom von ${zahl(I)} A. Wie groß ist die Spannung?`,unit:'V',a:U,
+   tip:'U = R · I (Spannung = Widerstand · Stromstärke).',erk:`U = R · I = ${R} Ω · ${zahl(I)} A = <b>${zahl(U)} V</b>.`};
+  return {kind:'num',q:`An einem Widerstand von ${R} Ω liegt eine Spannung von ${zahl(U)} V. Wie groß ist die Stromstärke?`,unit:'A',a:I,
+   tip:'Aus U = R · I folgt I = U : R.',erk:`I = U : R = ${zahl(U)} V : ${R} Ω = <b>${zahl(I)} A</b>.`};
+ },
+ stil(l){
+  const D={'Metapher':'Ein bildlicher Ausdruck ohne „wie“: Ein Wort wird in übertragener Bedeutung benutzt.','Vergleich':'Zwei Dinge werden mit „wie“ oder „als ob“ verglichen.','Personifikation':'Etwas, das kein Mensch ist, handelt wie ein Mensch (lachen, flüstern, tanzen).','Alliteration':'Mehrere Wörter hintereinander beginnen mit demselben Laut.','Hyperbel':'Eine starke Übertreibung.','Anapher':'Mehrere Sätze oder Verse beginnen mit denselben Wörtern.','rhetorische Frage':'Eine Frage, auf die man keine Antwort erwartet. Sie soll etwas betonen.','Antithese':'Zwei Gegensätze werden gegenübergestellt.'};
+  const P1=[['Das Leben ist eine Reise.','Metapher'],['Sein Herz ist aus Stein.','Metapher'],['Du bist mein Sonnenschein.','Metapher'],['Er ist stark wie ein Bär.','Vergleich'],['Sie schwimmt wie ein Fisch.','Vergleich'],['Seine Augen leuchten wie Sterne.','Vergleich'],['Die Sonne lacht vom Himmel.','Personifikation'],['Der Wind flüstert in den Bäumen.','Personifikation'],['Die Blumen tanzen im Wind.','Personifikation']];
+  const P2=[['Milch macht müde Männer munter.','Alliteration'],['Kleine Kinder kaufen Kekse.','Alliteration'],['Ich habe dir das schon tausendmal gesagt!','Hyperbel'],['Ich sterbe vor Hunger!','Hyperbel']];
+  const P3=[['Wir wollen Frieden. Wir wollen Freiheit. Wir wollen Gerechtigkeit.','Anapher'],['Wer will schon freiwillig Hausaufgaben machen?','rhetorische Frage'],['Ist das nicht wunderbar?','rhetorische Frage'],['Die einen jubeln, die anderen weinen.','Antithese'],['Der Geist ist willig, aber das Fleisch ist schwach.','Antithese']];
+  const pool=l===1?P1:l===2?P2.concat(P2,P1):P3.concat(P3,P2);
+  const types=l===1?['Metapher','Vergleich','Personifikation','Alliteration']:l===2?['Metapher','Vergleich','Personifikation','Alliteration','Hyperbel']:Object.keys(D);
+  const [s,t]=pick(pool);
+  const wrong=shuffle(types.filter(x=>x!==t)).slice(0,3);
+  return {kind:'mc',q:`„${s}“ Welches Stilmittel ist das?`,opts:[t,...wrong],
+   tip:'Achte auf Signalwörter: „wie“ deutet auf einen Vergleich. Handelt etwas wie ein Mensch? Wird übertrieben?',
+   erk:`<b>${t}</b>: ${D[t]}`};
+ }
+};
+
+/* ---------- Übungsthemen pro Kind ---------- */
+const UEB={
+ marvin:[
+  {id:'u-mal',gen:'mal',fach:'Mathe',titel:'Mal rechnen mit Übertrag',kurz:'Schriftlich malnehmen ohne Übertragsfehler',grp:'emp',check:'m-schriftlich'},
+  {id:'u-zeit',gen:'zeit',fach:'Mathe',titel:'Uhrzeiten und Zeitspannen',kurz:'Wann ist der Film zu Ende?',grp:'emp',check:null},
+  {id:'u-gross',gen:'gross',fach:'Deutsch',titel:'Groß oder klein?',kurz:'Nomen, Verben und Zeitangaben',grp:'emp',check:null},
+  {id:'u-rest',gen:'rest',fach:'Mathe',titel:'Geteilt mit Rest',kurz:'Größere Zahlen und Sachaufgaben',grp:'fit',check:'m-rest'},
+  {id:'u-flaeche',gen:'flaeche',fach:'Mathe',titel:'Umfang und Fläche',kurz:'Rechtecke und Quadrate',grp:'fit',check:'m-geo'}
+ ],
+ leonie:[
+  {id:'u-prozent',gen:'prozent',fach:'Mathe',titel:'Prozentrechnung',kurz:'Prozentwert, Prozentsatz, Rabatt',grp:'emp',check:null},
+  {id:'u-gleich',gen:'gleich',fach:'Mathe',titel:'Gleichungen lösen',kurz:'Auch mit x auf beiden Seiten und Klammern',grp:'emp',check:'l-terme'},
+  {id:'u-gerade',gen:'gerade',fach:'Mathe',titel:'Geraden und Steigung',kurz:'y = mx + t',grp:'emp',check:'l-funktion'},
+  {id:'u-stil',gen:'stil',fach:'Deutsch',titel:'Stilmittel erkennen',kurz:'Metapher, Vergleich und mehr',grp:'fit',check:'l-deutsch'},
+  {id:'u-geo',gen:'geo',fach:'Mathe',titel:'Winkel, Flächen, Volumen',kurz:'Dreieck, Trapez, Quader',grp:'neu',check:null},
+  {id:'u-physik',gen:'physik',fach:'Physik',titel:'Physik-Formeln',kurz:'Geschwindigkeit, Dichte, Hebel, Strom',grp:'neu',check:null}
+ ]};
+const GRP={emp:'Für dich empfohlen',fit:'Fit halten',neu:'Vorschau: neue Themen mit Tipps'};
+const BADGES=[[20,'Bronze-Stern'],[50,'Silber-Stern'],[100,'Gold-Stern'],[200,'Lern-Profi'],[400,'Lern-Champion']];
+const SESSION=10;
+
+function ust(kid,tid){
+ DB.ueben=DB.ueben||{};DB.ueben[kid]=DB.ueben[kid]||{};
+ if(!DB.ueben[kid][tid]){
+  const t=UEB[kid].find(x=>x.id===tid),r=t.check&&res(kid,t.check);
+  DB.ueben[kid][tid]={lvl:r&&pct(r)>=80?2:1,up:0,down:0,total:0,right:0,last:null};
+ }
+ return DB.ueben[kid][tid];
+}
+const peekU=(kid,tid)=>((DB.ueben||{})[kid]||{})[tid];
+const sterne=kid=>((DB.sterne||{})[kid])||0;
+function badgeOf(n){let b=null;BADGES.forEach(x=>{if(n>=x[0])b=x});return b}
+function nextBadge(n){return BADGES.find(x=>n<x[0])}
+
+function newTask(){
+ const t=UEB[S.kid].find(x=>x.id===S.tid),st=ust(S.kid,S.tid);
+ let task,i=0;do{task=GEN[t.gen](st.lvl);i++}while(i<8&&S.prevQ===task.q+(task.calc||''));
+ S.prevQ=task.q+(task.calc||'');
+ if(task.kind==='mc')task.order=shuffle(task.opts.map((o,i)=>i));
+ S.task=task;S.checked=false;S.tipShown=false;S.msg=null;
+}
+function startUeben(tid){
+ S={view:'ueben',kid:S.kid,tid,n:0,right:0,stars:0,startStars:sterne(S.kid)};
+ newTask();render();window.scrollTo(0,0);
+}
+
+function uebenView(app){
+ const t=UEB[S.kid].find(x=>x.id===S.tid),st=ust(S.kid,S.tid),f=S.task;
+ let body='';
+ if(f.kind==='mc')body=`<div class="opts">${f.order.map(i=>`<button class="opt${f.big?' big':''}" data-i="${i}">${esc(f.opts[i])}</button>`).join('')}</div>`;
+ else if(f.kind==='num')body=`<div class="inputs"><div class="field"><label for="in0">Deine Antwort</label><input id="in0" inputmode="decimal" autocomplete="off"></div>${f.unit?`<span class="unit">${f.unit}</span>`:''}</div>`;
+ else if(f.kind==='time')body=`<div class="inputs"><div class="field"><label for="in0">Stunde</label><input id="in0" inputmode="numeric" autocomplete="off" class="short"></div><span class="unit">:</span><div class="field"><label for="in1">Minuten</label><input id="in1" inputmode="numeric" autocomplete="off" class="short"></div><span class="unit">Uhr</span></div>`;
+ else body=`<div class="inputs"><div class="field"><label for="in0">Ergebnis</label><input id="in0" inputmode="numeric" autocomplete="off"></div><div class="field"><label for="in1">Rest</label><input id="in1" inputmode="numeric" autocomplete="off"></div></div>`;
+ app.innerHTML=`<div class="top"><div><span class="fach">${t.fach} · ${t.titel}</span><p class="muted">Aufgabe ${S.n+1} von ${SESSION}</p></div>
+   <div class="actions"><span class="lvl" aria-label="Stufe ${st.lvl} von 3">Stufe ${st.lvl}<span class="lvlbar">${[1,2,3].map(i=>`<i class="${i<=st.lvl?'on':''}"></i>`).join('')}</span></span><span class="starcount">★ ${S.stars}</span><button class="btn ghost small" id="pause">Pause</button></div></div>
+   <div class="quiz pop">
+    <div class="q">${esc(f.q)}${f.calc?`<span class="calc">${esc(f.calc)}</span>`:''}</div>
+    ${body}<div id="tipbox"></div><div id="fb"></div>
+    <div class="actions" id="acts"><button class="btn" id="check" disabled>Prüfen</button><button class="btn ghost" id="tip">Tipp</button><button class="link" id="skip">Weiß ich noch nicht</button></div>
+   </div>`;
+ $('#pause').onclick=()=>{save(DB);go({view:'kid',kid:S.kid})};
+ $('#tip').onclick=()=>{S.tipShown=true;$('#tipbox').innerHTML=`<div class="fb tip pop"><h3>Tipp</h3><p>${esc(f.tip)}</p></div>`;$('#tip').remove()};
+ const check=$('#check');let sel=null;
+ if(f.kind==='mc'){
+  app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{if(S.checked)return;app.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');sel=+b.dataset.i;check.disabled=false});
+ }else{
+  const ins=[...app.querySelectorAll('input')];
+  const upd=()=>{check.disabled=ins.some(i=>parseNum(i.value)===null)};
+  ins.forEach(i=>{i.oninput=upd;i.onkeydown=e=>{if(e.key==='Enter'&&!check.disabled)check.click()}});
+  ins[0].focus({preventScroll:true});
+ }
+ check.onclick=()=>{
+  let ok,given;
+  if(f.kind==='mc'){ok=sel===0;given=f.opts[sel]}
+  else if(f.kind==='num'){const v=parseNum($('#in0').value);ok=Math.abs(v-f.a)<1e-6;given=$('#in0').value}
+  else{const a=parseNum($('#in0').value),b=parseNum($('#in1').value);ok=a===f.a[0]&&b===f.a[1];given=f.kind==='time'?a+':'+String(b).padStart(2,'0'):a+' Rest '+b}
+  finish(ok,given,false);
+ };
+ $('#skip').onclick=()=>finish(false,'weiß ich noch nicht',true);
+
+ function finish(ok,given,skipped){
+  if(S.checked)return;S.checked=true;
+  const old=st.lvl;let lvMsg='';
+  st.total++;st.last=Date.now();
+  if(ok){st.right++;S.right++;st.up++;st.down=0;S.stars++;
+   DB.sterne=DB.sterne||{};DB.sterne[S.kid]=sterne(S.kid)+1;
+   if(st.up>=3&&st.lvl<3){st.lvl++;st.up=0;S.stars++;DB.sterne[S.kid]++;lvMsg=`<p class="lvup">Stark! Du bist jetzt auf Stufe ${st.lvl}. Dafür gibt es einen Extra-Stern.</p>`}}
+  else{st.down++;st.up=0;
+   if(st.down>=2&&st.lvl>1){st.lvl--;st.down=0;lvMsg=`<p>Wir gehen kurz auf Stufe ${st.lvl} zurück und üben dort weiter.</p>`}
+   DB.fehler=DB.fehler||{};const L=DB.fehler[S.kid]=DB.fehler[S.kid]||[];
+   L.unshift({tid:S.tid,lvl:old,q:f.q+(f.calc?' '+f.calc:''),given,date:Date.now()});L.length=Math.min(L.length,40);
+  }
+  save(DB);
+  if(f.kind==='mc')app.querySelectorAll('.opt').forEach(b=>{b.disabled=true;const i=+b.dataset.i;if(i===0)b.classList.add('right');else if(i===sel)b.classList.add('wrong')});
+  else app.querySelectorAll('input').forEach(i=>{i.disabled=true;i.classList.add(ok?'right':'wrong')});
+  const sol=f.kind==='num'?`Richtig ist: <b>${f.unit==='€'?eur(f.a):zahl(f.a)}${f.unit?' '+f.unit:''}</b>.<br>`:f.kind==='time'?`Richtig ist: <b>${uhr(f.a[0],f.a[1])} Uhr</b>.<br>`:f.kind==='rest'?`Richtig ist: <b>${f.a[0]} Rest ${f.a[1]}</b>.<br>`:'';
+  const fb=$('#fb');
+  if(ok)fb.innerHTML=`<div class="fb ok pop"><h3>${pick(['Richtig, super!','Genau!','Klasse, stimmt!','Richtig!'])} ★</h3>${lvMsg}<details><summary>Rechenweg ansehen</summary><p>${f.erk}</p></details></div>`;
+  else fb.innerHTML=`<div class="fb ${skipped?'skip':'no'} pop"><h3>${skipped?'Kein Problem, so geht es:':'Noch nicht ganz. So geht es:'}</h3><p>${sol}${f.erk}</p>${lvMsg}</div>`;
+  const last=S.n===SESSION-1;
+  $('#acts').innerHTML=`<button class="btn" id="next">${last?'Fertig':'Nächste Aufgabe'}</button>`;
+  $('#next').onclick=()=>{if(last)go(Object.assign({},S,{view:'uebenDone'}));else{S.n++;newTask();render();window.scrollTo(0,0)}};
+  $('#next').focus({preventScroll:true});
+ }
+}
+
+function uebenDone(app){
+ const t=UEB[S.kid].find(x=>x.id===S.tid),st=ust(S.kid,S.tid),now=sterne(S.kid);
+ const bOld=badgeOf(S.startStars),bNew=badgeOf(now);
+ const badge=bNew&&bNew!==bOld?`<div class="badge pop"><span>🏅</span><div><b>Neues Abzeichen: ${bNew[1]}</b><p class="muted">Du hast schon ${now} Sterne gesammelt.</p></div></div>`:'';
+ const nb=nextBadge(now);
+ app.innerHTML=`<div class="quiz done pop"><span class="fach">${t.fach} · ${t.titel}</span>
+  <div class="bigstars" style="letter-spacing:0">★ ${S.stars}</div>
+  <h2>${S.right>=8?'Super gemacht!':S.right>=5?'Gut gemacht!':'Gut, dass du drangeblieben bist!'}</h2>
+  <p class="num">${S.right} von ${SESSION} richtig · jetzt Stufe ${st.lvl} von 3</p>
+  ${badge}
+  ${nb?`<p class="muted">Noch ${nb[0]-now} Sterne bis zum Abzeichen „${nb[1]}“.</p>`:''}
+  <div class="actions" style="justify-content:center"><button class="btn" id="again">Noch eine Runde</button><button class="btn ghost" id="more">Anderes Thema</button></div></div>`;
+ $('#again').onclick=()=>{go({view:'kid',kid:S.kid});startUeben(t.id)};
+ $('#more').onclick=()=>go({view:'kid',kid:S.kid});
+}
+
+function uebenRows(kid){
+ return UEB[kid].map(t=>{const u=peekU(kid,t.id);
+  if(!u||!u.total)return `<div class="row"><span>${t.fach}: ${t.titel}</span><span class="bar"><i style="width:0"></i></span><span class="pill open">noch nicht geübt</span></div>`;
+  const p=Math.round(100*u.right/u.total),lv=level(p);
+  return `<div class="row"><span>${t.fach}: ${t.titel} <span class="muted num">· Stufe ${u.lvl} · ${u.right}/${u.total} richtig · ${fmtDate(u.last)}</span></span><span class="bar"><i class="${lv}" style="width:${p}%"></i></span><span class="pill ${lv}">${p} %</span></div>`}).join('');
+}
+function fehlerList(kid){
+ const L=((DB.fehler||{})[kid]||[]).slice(0,10);if(!L.length)return '';
+ return `<details><summary>Letzte Fehler beim Üben (${L.length})</summary><ul>${L.map(e=>{const t=UEB[kid].find(x=>x.id===e.tid);return `<li>${esc(t?t.titel:'')}: ${esc(e.q)} <span class="muted">(Antwort: ${esc(e.given)}, Stufe ${e.lvl})</span></li>`}).join('')}</ul></details>`;
+}
+function uebenReport(){
+ const lines=['','ÜBEN'];
+ for(const kid of Object.keys(UEB)){
+  lines.push(KIDS[kid].name+': '+sterne(kid)+' Sterne');
+  UEB[kid].forEach(t=>{const u=peekU(kid,t.id);if(u&&u.total)lines.push('- '+t.titel+': Stufe '+u.lvl+', '+u.right+'/'+u.total+' richtig, zuletzt '+fmtDate(u.last));else lines.push('- '+t.titel+': noch nicht geübt')});
+  ((DB.fehler||{})[kid]||[]).slice(0,10).forEach(e=>{const t=UEB[kid].find(x=>x.id===e.tid);lines.push('    falsch ('+(t?t.titel:'')+', Stufe '+e.lvl+'): '+e.q+' | Antwort: '+e.given)});
+  lines.push('');
+ }
+ return lines.join('\n');
+}
+
+render();
+</script>
+
+</body>
+</html>
