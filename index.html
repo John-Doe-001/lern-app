@@ -872,7 +872,7 @@ function uebenView(app){
  }
 }
 
-function sendRound(n){const t=UEB[S.kid].find(x=>x.id===S.tid);
+function sendRound(n){if(S.sentN===n)return;S.sentN=n;const t=UEB[S.kid].find(x=>x.id===S.tid);
  queueEvent({kid:KIDS[S.kid].name,art:n<SESSION?'Üben (abgebrochen)':'Üben',fach:t.fach,topic:t.titel,lvlStart:S.lvlStart,lvlEnd:ust(S.kid,S.tid).lvl,right:S.right,total:n,errors:S.errs||[]})}
 function uebenDone(app){
  const t=UEB[S.kid].find(x=>x.id===S.tid),st=ust(S.kid,S.tid),now=sterne(S.kid);
@@ -1042,6 +1042,8 @@ function syncFlush(){
   .catch(()=>false).finally(()=>{syncBusy=false});
 }
 setTimeout(syncFlush,1500);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='hidden')return;
+ if(S.view==='ueben'){const n=S.n+(S.checked?1:0);if(n>0)sendRound(n)}else syncFlush()});
 
 render();
 </script>
