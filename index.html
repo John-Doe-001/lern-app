@@ -839,7 +839,7 @@ function uebenView(app){
  check.onclick=()=>{
   let ok,given;
   if(f.kind==='mc'){ok=sel===0;given=f.opts[sel]}
-  else if(f.kind==='text'){given=$('#in0').value;ok=f.a.some(x=>normEn(x)===normEn(given))}
+  else if(f.kind==='text'){given=$('#in0').value;ok=textOk(f,given)}
   else if(f.kind==='num'){const v=parseNum($('#in0').value);ok=Math.abs(v-f.a)<1e-6;given=$('#in0').value}
   else{const a=parseNum($('#in0').value),b=parseNum($('#in1').value);ok=a===f.a[0]&&b===f.a[1];given=f.kind==='time'?a+':'+String(b).padStart(2,'0'):a+' Rest '+b}
   finish(ok,given,false);
@@ -987,7 +987,16 @@ const READ={
    ['Which sentence from the text is in the passive?','He was chosen for the junior team.',['He gets up at 5 a.m.','His parents support him.','He would like to study sports science.']]]},
  3:{title:'Route 66',text:"Every summer thousands of families go on a road trip across the USA. The most famous road is Route 66. It was built in 1926 and connected Chicago with Los Angeles. It is almost 4,000 kilometres long. Today parts of it have been replaced by modern highways, but many tourists still love the old diners and motels along the way. The Smith family from Ohio drove the whole route last year. \"We were on the road for three weeks,\" says 14-year-old Emma. \"The best part was the Grand Canyon. It isn't directly on Route 66, so we made a little detour.\"",
   qs:[['Route 66 was built in 1926.','true'],['Route 66 goes from New York to Los Angeles.','false'],['Today the whole road still looks the way it did in 1926.','false'],['The Smith family travelled for three weeks.','true'],["Emma's favourite part of the trip was the Grand Canyon.",'true'],['The Smiths slept in a tent every night.','not in the text']]}};
-const normEn=s=>String(s).toLowerCase().replace(/[’`´]/g,"'").replace(/\s+/g,' ').trim().replace(/[.!]+$/,'');
+const normEn=s=>String(s).toLowerCase().replace(/[’`´‘]/g,"'").replace(/[.,!?;:"„“”«»]/g,' ').replace(/\s+/g,' ').trim();
+function textOk(f,given){
+ const g=normEn(given);
+ if(f.a.some(x=>normEn(x)===g))return true;
+ if(f.calc&&f.calc.includes('___')){
+  const frame=f.calc.replace(/\s*\([^)]*\)/g,'');
+  return f.a.some(x=>{const full=normEn(frame.replace('___',x));return full===g||full.replace(/^(\w+) \1 /,'$1 ')===g});
+ }
+ return false;
+}
 Object.assign(GEN,{
  passive(l){
   if(l===3&&Math.random()<.6){const [act,ok,...rest]=pick(PASS_MC);const t=rest.pop();
