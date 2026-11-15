@@ -1081,7 +1081,40 @@ const BUCH={
   ['p. 24: When did José start to take sport seriously?','when he was about 15',['when he was five','after high school','when he came to Miami']],
   ['p. 24: What would José like to do one day?','start a sports camp for talented young immigrants',['go back to Cuba for ever','become a radio presenter','open a shop like his parents']],
   ['p. 24: What does José say about his story?','It is an example of the American Dream come true.',['It is a very sad story.','It could only happen in Cuba.','He was just unlucky.']]]};
+const JAHR={
+ 1:[['p. 29: Where did Tim work during his gap year?','at an amusement park in L.A.',['at a zoo in New York','in a hotel in Miami','at a school in Chicago']],
+  ['p. 29/30: Before Tim started working at the amusement park, he had thought it would be …','easy',['boring','hard','dangerous']],
+  ['p. 29: What time did Tim have to get up every morning?','at 6 a.m.',['at 5 a.m.','at 7 a.m.','at half past six']],
+  ['p. 29/30: The first customers arrived at …','7.30 a.m.',['6.30 a.m.','7 a.m.','8 a.m.']],
+  ['p. 29: What did the workers call their uniform?','costume',['dress','suit','outfit']],
+  ['p. 29/30: Customers got frustrated (annoyed) if the rides …','were busy',['were scary','weren’t working','were too slow']],
+  ['p. 29/30: Tim’s favourite job was …','on the ghost train',['in the gift shop','as one of the characters','in the restaurant']]],
+ 2:[['p. 29: Why do customers expect everything to be perfect?','They are on holiday and have paid a lot of money.',['They are all children.','They work in the park too.','The park is free.']],
+  ['p. 29: Why was Tim often asked to dress as one of the park’s characters?','He is good at talking to people.',['He was the tallest worker.','He could sing very well.','Nobody else wanted to do it.']],
+  ['p. 29: What did a kid say when Tim was dressed as a bat?','“But bats only come out at night.”',['“Bats can’t talk!”','“I’m scared of bats.”','“Can you fly?”']],
+  ['p. 29: What did Tim tell a man on the ghost train?','that he was the ghost of a German man who had immigrated in the 1800s',['that the train was broken','that he was a famous actor','that he didn’t speak English']],
+  ['p. 29: What did the man do when Tim started speaking German?','He almost jumped out of his skin.',['He started laughing.','He answered in German.','He asked for his money back.']],
+  ['p. 29: What does Tim remember most now?','making children smile and giving them happy memories',['the long working hours','the rude customers','the hot costumes']],
+  ['p. 31: How many helpers does the Love-4-Animals shelter need?','two',['one','three','four']],
+  ['p. 31: What kind of jobs are they at the animal shelter?','part-time with regular working hours',['full-time at weekends only','night jobs','holiday jobs for one week']],
+  ['p. 31: Which question is NOT in the animal shelter ad?','Can you drive a car?',['Do you love and respect animals?','Are you energetic & fit?','Are you a good team player?']],
+  ['p. 31: Where are the Rocky Mountains?','in the west of Canada and the USA',['in the east of the USA','in the south of Mexico','in the north of Alaska only']]],
+ 3:[['p. 30 (4a): “a year’s break, usually taken by a student between leaving school and starting further education”','gap year',['school year','holiday','day off']],
+  ['p. 30 (4a): “something that is interesting or difficult”','challenge',['memory','costume','ride']],
+  ['p. 30 (4a): “feeling angry because you can’t do what you want to”','frustrated',['excited','surrounded','awesome']],
+  ['p. 30 (4a): “a place where presents can be bought”','gift shop',['restaurant','amusement park','ghost train']],
+  ['p. 30 (4a): “a scary ride in an amusement park”','ghost train',['roller coaster','gift shop','ice cream machine']],
+  ['p. 30 (4a): “something you remember”','memory',['challenge','experience','holiday']],
+  ['p. 29: “You have to be able to think on your feet.” What does that mean?','react quickly and make good decisions without time to think',['stand all day long','walk very fast','think about your shoes']],
+  ['p. 29: “He almost jumped out of his skin.” What does that mean?','He got a very big fright.',['He was very happy.','He jumped very high.','He got a sunburn.']],
+  ['p. 30 (5a): Why does Tim compare his year with a roller coaster?','It had ups and downs: hard work and rude customers, but also lots of fun and happy memories.',['He worked on the roller coaster every day.','He was sick on the roller coaster.','He was scared the whole year.']],
+  ['p. 31: Which sentence is good for talking about the advantages of a job?','Being a ranger is exciting because you can work outside.',['Being a ranger is exciting because it is boring.','I don’t think so because yes.','Really? But you’ll have to work outside.']],
+  ['p. 31: Which sentence gives a disadvantage of a job?','Really? But you’ll have to work at the weekends.',['I’d love to become a vet because I love animals.','Being a ski instructor is fun because you can ski every day.','I’d like to work on a ranch.']]]};
 Object.assign(GEN,{
+ jahr(l){
+  const [q,ok,w]=pick(JAHR[l]);
+  return {kind:'mc',q,opts:[ok,...w],tip:'Lies die Stelle im Buch nach (Text „My roller coaster year“ S. 29, Aufgaben S. 30, „Talking about jobs“ S. 31).',erk:`Richtig: <b>${esc(ok)}</b>.`};
+ },
  vok(l){
   const v=vokPick(),[en,de,pg]=v;
   const others=shuffle(VOK.filter(x=>x!==v));
@@ -1108,7 +1141,8 @@ UEB.leonie.splice(0,0,
  {id:'u-vok',gen:'vok',fach:'Englisch',titel:'Vokabeln Unit 1 (S. 173–180)',kurz:'Stufe 1: Englisch → Deutsch, Stufe 2: Deutsch → Englisch, Stufe 3: selbst schreiben',grp:'sa',check:null});
 UEB.leonie.splice(3,0,
  {id:'u-buch',gen:'buch',fach:'Englisch',titel:'Fragen zu den Buchtexten',kurz:'S. 12–14 und S. 24, mit dem Buch daneben',grp:'sa',check:null});
-UEB.leonie.push({id:'u-negq',gen:'negq',fach:'Englisch',titel:'Negative questions (S. 139)',kurz:'Kommt laut Heft erst nach den Ferien dran',grp:'later',check:null});
+UEB.leonie.splice(4,0,{id:'u-jahr',gen:'jahr',fach:'Englisch',titel:'A year abroad + Talking about jobs (S. 29–31)',kurz:'Tims Bericht, Wörter aus Aufgabe 4, Stellenanzeige',grp:'sa',check:null},
+ {id:'u-negq',gen:'negq',fach:'Englisch',titel:'Negative questions (S. 139)',kurz:'Verneinte Fragen: Don’t you …? Haven’t you …?',grp:'sa',check:null});
 GRP.later='Englisch: nach den Ferien';
 
 /* ---------- Versand an Google-Tabelle ---------- */
