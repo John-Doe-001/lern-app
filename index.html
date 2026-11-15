@@ -332,7 +332,7 @@ function kidView(app){
   const wallet=`<div class="wallet"><span class="big">★ ${n} Sterne</span>${b?`<span>Dein Abzeichen: <b>${b[1]}</b></span>`:''}
     ${nb?`<div class="meter" aria-hidden="true"><i style="width:${Math.round(100*(n-prevB)/(nb[0]-prevB))}%;background:var(--star)"></i></div><span class="muted">Noch ${nb[0]-n} Sterne bis „${nb[1]}“</span>`:'<span class="muted">Du hast alle Abzeichen!</span>'}</div>`;
   const grp={};UEB[S.kid].forEach(t=>(grp[t.grp]=grp[t.grp]||[]).push(t));
-  const ueb=['sa','emp','fit','neu'].filter(g=>grp[g]).map(g=>`<div class="section"><span class="fach">${GRP[g]}</span>${grp[g].map(t=>{
+  const ueb=['sa','emp','fit','neu','later'].filter(g=>grp[g]).map(g=>`<div class="section"><span class="fach">${GRP[g]}</span>${grp[g].map(t=>{
     const u=peekU(S.kid,t.id);
     const right=u&&u.total?`<span class="lvl">Stufe ${u.lvl}<span class="lvlbar">${[1,2,3].map(i=>`<i class="${i<=u.lvl?'on':''}"></i>`).join('')}</span></span>`:'<span class="pill open">Neu</span>';
     return `<button class="topic" data-u="${t.id}"><span class="t"><b>${t.titel}</b><span class="muted">${t.kurz}</span><span class="tag">${t.fach}</span></span>${right}</button>`}).join('')}</div>`).join('');
@@ -847,7 +847,7 @@ function uebenView(app){
  $('#skip').onclick=()=>finish(false,'weiß ich noch nicht',true);
 
  function finish(ok,given,skipped){
-  if(S.checked)return;S.checked=true;
+  if(S.checked)return;S.checked=true;if(f.onResult)f.onResult(ok&&!skipped);
   const old=st.lvl;let lvMsg='';
   st.total++;st.last=Date.now();
   if(ok){st.right++;S.right++;st.up++;st.down=0;S.stars++;
@@ -913,11 +913,8 @@ function uebenReport(){
 
 /* ================= ENGLISCH: Schulaufgabe 17.11. ================= */
 const PRULE={
- sp:'Simple Present Passive: <b>am / is / are + 3. Form</b> (past participle).',
- past:'Simple Past Passive: <b>was / were + 3. Form</b>.',
- pp:'Present Perfect Passive: <b>has / have been + 3. Form</b>.',
- will:'Future Passive: <b>will be + 3. Form</b>.',
- modal:'Passive mit can / must: <b>can / must + be + 3. Form</b>.'};
+ sp:'Passiv Simple Present: <b>am / is / are + 3. Form</b>. Verneint: isn’t / aren’t + 3. Form.',
+ past:'Passiv Simple Past: <b>was / were + 3. Form</b>. Verneint: wasn’t / weren’t + 3. Form.'};
 const PASS={
  1:[['English and French ___ (speak) in Canada.',['are spoken'],'sp'],
   ['Maple syrup ___ (make) from the sap of maple trees.',['is made'],'sp'],
@@ -926,36 +923,37 @@ const PASS={
   ['The Golden Gate Bridge ___ (open) in 1937.',['was opened'],'past'],
   ['Many films ___ (make) in Hollywood every year.',['are made'],'sp'],
   ['The letters ___ (write) by my grandma last week.',['were written'],'past'],
-  ['The windows ___ (clean) every Friday.',['are cleaned'],'sp'],
   ['My bike ___ (steal) last night.',['was stolen'],'past'],
   ['These houses ___ (build) in 1920.',['were built'],'past'],
   ['Breakfast ___ (serve) from 7 to 10 a.m.',['is served'],'sp'],
-  ['The first email ___ (send) in 1971.',['was sent'],'past']],
- 2:[['The new sports hall ___ (build) next year.',['will be built'],'will'],
-  ['My bike ___ (repair). Now I can ride it again.',['has been repaired'],'pp'],
-  ['Phones ___ (must not / use) in class.',['must not be used',"mustn't be used"],'modal'],
-  ['The tickets ___ (can / buy) online.',['can be bought'],'modal'],
-  ['Two new songs ___ (release) this week.',['have been released'],'pp'],
-  ['The results ___ (send) to you tomorrow.',['will be sent'],'will'],
-  ['The homework ___ (must / finish) by Monday.',['must be finished'],'modal'],
-  ['The museum ___ (visit) by two million people so far.',['has been visited'],'pp'],
-  ['The bridge ___ (not finish) yet.',['has not been finished',"hasn't been finished"],'pp'],
-  ['The game ___ (can / watch) on TV tonight.',['can be watched'],'modal'],
-  ['The winners ___ (announce) at the end of the show.',['will be announced'],'will']],
+  ['King cakes ___ (make) by many families in New Orleans.',['are made'],'sp'],
+  ['Robin ___ (take) to hospital yesterday.',['was taken'],'past']],
+ 2:[['Credit cards ___ (not accept) in this shop.',["aren't accepted","are not accepted"],'sp'],
+  ['A microwave ___ (not need) for this recipe.',["isn't needed","is not needed"],'sp'],
+  ['Our team ___ (not beat) last Saturday.',["wasn't beaten","was not beaten"],'past'],
+  ['Fantastic costumes ___ (wear) at Mardi Gras every year.',['are worn'],'sp'],
+  ['Our house ___ (not decorate) for the festival.',["isn't decorated","is not decorated"],'sp'],
+  ['New Orleans ___ (influence) by many cultures.',['was influenced'],'past'],
+  ['Lots of houses ___ (destroy) by the storm.',['were destroyed'],'past'],
+  ['The fans ___ (ask) to keep quiet.',['were asked'],'past'],
+  ['He ___ (not operate) on his knee.',["wasn't operated","was not operated"],'past'],
+  ['The players ___ (cheer) on by the fans.',['were cheered'],'past'],
+  ['The new students ___ (not invite) to the party.',["weren't invited","were not invited"],'past'],
+  ['Spanish ___ (speak) widely in Miami.',['is spoken'],'sp']],
  3:[['„They built the CN Tower in the 1970s.“ → The CN Tower ___ in the 1970s.',['was built'],'past'],
-  ['„Someone has broken the window.“ → The window ___.',['has been broken'],'pp'],
-  ['„They will show the film at 8 p.m.“ → The film ___ at 8 p.m.',['will be shown'],'will'],
-  ['„People must not feed the bears.“ → The bears ___.',['must not be fed',"mustn't be fed"],'modal']]};
+  ['„Someone broke the window last night.“ → The window ___ last night.',['was broken'],'past'],
+  ["„They don't sell newspapers here.“ → Newspapers ___ here.",["aren't sold","are not sold"],'sp'],
+  ['„Hurricane Katrina destroyed many homes.“ → Many homes ___ by Hurricane Katrina.',['were destroyed'],'past'],
+  ['„People celebrate Mardi Gras every year.“ → Mardi Gras ___ every year.',['is celebrated'],'sp']]};
 const PASS_MC=[
  ['People speak Spanish in many parts of the USA.','Spanish is spoken in many parts of the USA.','Spanish was spoken in many parts of the USA.','Spanish is speak in many parts of the USA.','Spanish speaks in many parts of the USA.','sp'],
- ['Alexander Graham Bell invented the telephone.','The telephone was invented by Alexander Graham Bell.','The telephone is invented by Alexander Graham Bell.','The telephone was invent by Alexander Graham Bell.','The telephone has invented by Alexander Graham Bell.','past'],
- ['They will open the new park in May.','The new park will be opened in May.','The new park will opened in May.','The new park will be open in May.','The new park is opened in May.','will'],
- ['Someone has stolen my phone!','My phone has been stolen!','My phone has stolen!','My phone was been stolen!','My phone have been stolen!','pp'],
+ ['Alexander Graham Bell invented the telephone.','The telephone was invented by Alexander Graham Bell.','The telephone is invented by Alexander Graham Bell.','The telephone was invent by Alexander Graham Bell.','The telephone were invented by Alexander Graham Bell.','past'],
  ['The teacher checks our tests every week.','Our tests are checked by the teacher every week.','Our tests is checked by the teacher every week.','Our tests are check by the teacher every week.','Our tests were checked by the teacher every week.','sp'],
- ['You must wear a helmet.','A helmet must be worn.','A helmet must be wear.','A helmet must worn.','A helmet must been worn.','modal'],
  ['Millions of tourists visit Yellowstone National Park every year.','Yellowstone National Park is visited by millions of tourists every year.','Yellowstone National Park are visited by millions of tourists every year.','Yellowstone National Park was visit by millions of tourists every year.','Yellowstone National Park visits millions of tourists every year.','sp'],
  ['The Spanish brought horses to North America.','Horses were brought to North America by the Spanish.','Horses was brought to North America by the Spanish.','Horses were bring to North America by the Spanish.','Horses are brought to North America by the Spanish.','past'],
- ["We can't change the past.","The past can't be changed.","The past can't be change.","The past can't changed.","The past can't been changed.",'modal']];
+ ['The storm destroyed lots of houses.','Lots of houses were destroyed by the storm.','Lots of houses was destroyed by the storm.','Lots of houses are destroyed by the storm.','Lots of houses were destroy by the storm.','past'],
+ ["They didn't invite Tom to the party.","Tom wasn't invited to the party.","Tom isn't invited to the party.","Tom wasn't invite to the party.","Tom didn't invited to the party.",'past'],
+ ["Shops don't accept credit cards here.","Credit cards aren't accepted here.","Credit cards isn't accepted here.","Credit cards weren't accepted here.","Credit cards don't accepted here.",'sp']];
 const NA={
  1:[['What is the capital of the USA?','Washington, D.C.',['New York','Los Angeles','Chicago']],
   ['What is the capital of Canada?','Ottawa',['Toronto','Vancouver','Montreal']],
@@ -998,7 +996,7 @@ Object.assign(GEN,{
     erk:`Richtig: „${esc(ok)}“<br>${PRULE[t]}`}}
   const [s,a,t]=pick(PASS[l]);
   return {kind:'text',q:'Put in the passive form:',calc:s,a,
-   tip:'Achte auf die Zeit (Signalwörter: every, last, so far, next, tomorrow) und darauf, ob das Subjekt Einzahl oder Mehrzahl ist. Dann: Form von „be“ + 3. Form.',
+   tip:'Achte auf die Zeit (every, usually → Present; yesterday, last, in 1937 → Past) und darauf, ob das Subjekt Einzahl oder Mehrzahl ist. Dann: Form von „be“ + 3. Form.',
    erk:`Richtig: „${esc(s.replace('___',a[0]).replace(/ \([^)]*\)/,''))}“<br>${PRULE[t]}`};
  },
  na(l){
@@ -1017,11 +1015,101 @@ Object.assign(GEN,{
  }
 });
 UEB.leonie.unshift(
- {id:'u-passive',gen:'passive',fach:'Englisch',titel:'Passive',kurz:'is / was / has been / will be + 3. Form',grp:'sa',check:'l-englisch'},
+ {id:'u-passive',gen:'passive',fach:'Englisch',titel:'Passive',kurz:'Simple Present und Simple Past (S. 138)',grp:'sa',check:'l-englisch'},
  {id:'u-read',gen:'read',fach:'Englisch',titel:'Reading',kurz:'Texte lesen und Fragen beantworten',grp:'sa',check:null},
  {id:'u-na',gen:'na',fach:'Englisch',titel:'Zoom in: North America',kurz:'Länder, Städte, Landeskunde',grp:'sa',check:null});
 GRP.sa='Schulaufgabe Englisch am 17.11.';
 
+
+/* ================= ENGLISCH Unit 1: Vokabeln S. 173–180, verneinte Fragen, Buchtexte ================= */
+const VOK=[
+ ['African-American','afroamerikanisch',173],['African American','Afroamerikaner; Afroamerikanerin',173],['European','europäisch; Europäer, Europäerin',173],['Native American','Ureinwohner(in) Amerikas; Indianer(in)',173],['civil rights','Bürgerrechte',173],['movement','Bewegung',173],
+ ['settler','Siedler; Siedlerin',174],['Asia','Asien',174],['tribe','Stamm; Volksstamm',174],['Canadian','kanadisch; Kanadier, Kanadierin',174],['taxi','Taxi',174],['symbol','Symbol',174],['hot dog','Hotdog',174],['maple leaf','Ahornblatt',174],['cross','Kreuz',174],['action','Handlung; Action',174],
+ ['skyline','Skyline',174],['sky','Himmel',174],['to tend','tendieren; neigen',174],['exception','Ausnahme',174],['to cover','bedecken; abdecken',174],['square mile','Quadratmeile',174],['suburb','Vorort',174],['to commute','pendeln',174],['downtown','im Stadtzentrum',174],['to complain','sich beschweren; sich beklagen',174],['architecture','Architektur',174],
+ ['distance','Entfernung; Distanz',175],['public transport','öffentliche Verkehrsmittel',175],['to cause','verursachen',175],['air','Luft',175],['pollution','Verschmutzung',175],['traffic jam','Stau',175],['grid','Gitter; Raster',175],['avenue','Allee; Boulevard',175],['speed','Geschwindigkeit',175],['elevator','Aufzug; Lift',175],['foot','Fuß (Längenmaß)',175],
+ ['culture','Kultur',175],['to influence','beeinflussen',175],['African','afrikanisch; Afrikaner(in)',175],['as well as','sowohl … als auch',175],['the Spanish','die Spanier',175],['the French','die Franzosen',175],['bored','gelangweilt',175],['to go on','geschehen; passieren',175],['jazz','Jazz',175],['Vietnamese','vietnamesisch; Vietnamese, Vietnamesin',175],['mask','Maske',175],['plastic','Plastik; Kunststoff',175],['outdoors','im Freien; draußen',175],
+ ['as','da (weil)',176],['kayaking','Kajakfahren',176],['cream cheese','Frischkäse',176],['onion','Zwiebel',176],['local','hiesig; lokal; örtlich',176],['whenever','wann immer; immer wenn',176],['though','jedoch',176],['injured','verletzt',176],['gallery','Galerie',176],['department store','Kaufhaus',176],['ice rink','Eislaufbahn',176],['aquarium','Aquarium',176],['to cheer sb on','jemanden anfeuern',176],['bead','Perle',176],['immigrant','Einwanderer; Einwanderin',176],['to attract','anziehen',176],['low','niedrig',176],['to offer','anbieten; bieten',176],
+ ['Latin America','Lateinamerika',177],['to immigrate','einwandern',177],['decision','Entscheidung',177],['foreign','fremd; ausländisch',177],['Cuba','Kuba',177],['unemployed','arbeitslos',177],['Cuban','kubanisch; Kubaner, Kubanerin',177],['community','Gemeinde; Gemeinschaft',177],['widely spoken','weitverbreitet',177],['salsa','Salsa (Tanz; Soße)',177],['to get to know','kennen lernen',177],['career','Beruf; Laufbahn; Karriere',177],['to take sth seriously','etwas ernst nehmen',177],['to leave behind','zurücklassen; hinterlassen',177],['motivated','motiviert',177],['ambitious','ehrgeizig',177],['to come true','wahr werden',177],['future','Zukunft',177],['citizen','Staatsbürger; Staatsbürgerin',177],['contact','Kontakt',177],['to get used to sth','sich an etwas gewöhnen',177],['to emigrate','auswandern',177],
+ ['to succeed (in)','Erfolg haben (mit/bei)',178],['to fail (at)','versagen (bei); fehlschlagen',178],['support','Unterstützung; Hilfe',178],['to adapt (to)','sich anpassen (an)',178],['border','Grenze',178],['to go ahead','fortfahren; loslegen',178],['result','Ergebnis',178],['thirsty','durstig',178],['ingredient','Zutat',178],['tablespoon','Esslöffel',178],['mustard','Senf',178],['roast pork','Schweinebraten',178],['Swiss','schweizerisch; Schweizer(in)',178],['pickle','saure Gurke',178],['horizontal','horizontal; längs',178],['to butter','buttern',178],['to spread','streichen',178],['onto','auf (hinauf)',178],['sandwich press','Sandwichtoaster',178],['piece','Stück',178],['French fries','Pommes frites',178],
+ ['roller coaster','Achterbahn',179],['gap year','(freiwilliges) soziales Jahr',179],['to be wrong','unrecht haben; sich irren',179],['employee','Angestellter; Angestellte',179],['customer','Kunde; Kundin',179],['on time','pünktlich',179],['to expect','erwarten',179],['challenge','Herausforderung',179],['frustrated','frustriert; enttäuscht',179],
+ ['line','Schlange (zum Anstehen)',180],['to be surrounded by sth','umgeben sein von etwas',180],['gift','Geschenk; Talent; Gabe',180],['inside','innen; drinnen',180],['to be able to','fähig sein; können',180],["to think on one's feet",'eine schnelle Entscheidung treffen',180],['ghost train','Geisterbahn',180],['to scare','erschrecken',180],["to jump out of one's skin",'sich zu Tode erschrecken',180],['working hours','Arbeitszeit',180],['memory','Erinnerung; Gedächtnis',180],['forever','für immer; ewig',180]];
+function vokKey(en){return 'v:'+en}
+function vokPick(){
+ const W=(DB.vokw=DB.vokw||{});
+ const weights=VOK.map(v=>1+3*(W[vokKey(v[0])]||0));
+ let r=Math.random()*weights.reduce((a,b)=>a+b,0);
+ for(let i=0;i<VOK.length;i++){r-=weights[i];if(r<=0)return VOK[i]}
+ return VOK[VOK.length-1];
+}
+function vokForms(en){
+ const base=en.replace(/\([^)]*\)/g,'').replace(/\s+/g,' ').trim();
+ const out=new Set([en,base]);
+ [...out].forEach(x=>{if(/^to /.test(x))out.add(x.slice(3));out.add(x.replace(/\bsth\b/,'something').replace(/\bsb\b/,'somebody'))});
+ return [...out];
+}
+function vokResult(en){return ok=>{const W=(DB.vokw=DB.vokw||{}),k=vokKey(en);W[k]=Math.max(0,(W[k]||0)+(ok?-1:2));save(DB)}}
+const NEGQ=[
+ ['___ on Saturday? (we · not can · meet)',["Can't we meet"]],
+ ['___ ill yesterday? (you · not be)',["Weren't you"]],
+ ['___ French? (you · not speak)',["Don't you speak"]],
+ ['___ the article yet? (you · not read)',["Haven't you read"]],
+ ['Why ___ at home last night? (you · not be)',["weren't you","Why weren't you"]],
+ ['___ on vacation together last summer? (you · not go)',["Didn't you go"]],
+ ['___ her parents recently? (you · not meet)',["Haven't you met"]],
+ ['___ your parents there too? (not be)',["Weren't your parents"]],
+ ['Why ___ English when they came to the USA? (your parents · not speak)',["didn't your parents speak","Why didn't your parents speak"]],
+ ['___ pop music? (you · not like)',["Don't you like"]],
+ ['___ thirsty now too? (you · not be)',["Aren't you"]],
+ ['Why ___ for a coffee in the cafeteria? (we · not go)',["don't we go","Why don't we go"]],
+ ['___ coffee at all? (you · not drink)',["Don't you drink"]],
+ ['___ your Cuban relatives? (you · not miss)',["Don't you miss","Didn't you miss"]]];
+const BUCH={
+ 1:[['p. 12: How many floors does the Willis Tower in Chicago have?','110',['100','120','90']],
+  ['p. 12: How many US states can you see from the Skydeck on a nice day?','four',['two','three','five']],
+  ['p. 12: How big is Los Angeles compared to Munich?','about four times as big',['about twice as big','about ten times as big','about the same size']],
+  ['p. 13: In Seattle, which way do “streets” usually go?','from east to west',['from north to south','in circles','along the coast']],
+  ['p. 13: Why do most Americans drive everywhere?','The country is huge and there is less public transport.',['Petrol is free in the USA.','Cars are cheaper than bikes.','There are no buses at all.']]],
+ 2:[['p. 14: What is hidden in a traditional king cake in New Orleans?','a small plastic baby',['a gold coin','a little bead','a secret message']],
+  ['p. 14: What happens if you find it in your slice?',"You'll have luck for the whole year.",['You have to bake the next cake.','You win a trip to Seattle.','You must wear a mask.']],
+  ['p. 14: What is a “Seattle-style” hot dog?','a hot dog with cream cheese and onions',['a hot dog with ketchup and mustard','a hot dog with chili and cheese','a hot dog with pickles']],
+  ["p. 14: Why was Tyler disappointed with last week's game?",'Their best player was injured during the game.',['The game was cancelled.','He had no ticket.','It rained the whole time.']],
+  ['p. 14: Where does Tyler hang around with his friends when he is not on the lake?','in Gas Works Park',['at the Space Needle','in a department store','at the ice rink']]],
+ 3:[['p. 24: How old was José when he came to Miami?','ten',['twelve','fifteen','seven']],
+  ["p. 24: Why did José's parents leave Cuba?",'His father had been unemployed and they wanted the best chances for their children.',['They won a trip to Miami.','José got a basketball scholarship.','His mother found a job in a hotel.']],
+  ["p. 24: What did José's parents open in Miami?",'a small shop selling Cuban things to other immigrants',['a Cuban restaurant','a basketball school','a salsa club']],
+  ['p. 24: In which part of Miami did the family live at first?','Little Havana',['Little Italy','South Beach','Downtown']],
+  ['p. 24: When did José start to take sport seriously?','when he was about 15',['when he was five','after high school','when he came to Miami']],
+  ['p. 24: What would José like to do one day?','start a sports camp for talented young immigrants',['go back to Cuba for ever','become a radio presenter','open a shop like his parents']],
+  ['p. 24: What does José say about his story?','It is an example of the American Dream come true.',['It is a very sad story.','It could only happen in Cuba.','He was just unlucky.']]]};
+Object.assign(GEN,{
+ vok(l){
+  const v=vokPick(),[en,de,pg]=v;
+  const others=shuffle(VOK.filter(x=>x!==v));
+  if(l===1)return {kind:'mc',q:`Was heißt „${en}“?`,opts:[de,...others.slice(0,3).map(x=>x[1])],onResult:vokResult(en),
+   tip:`Das Wort steht auf Seite ${pg} im Vokabelteil.`,erk:`<b>${esc(en)}</b> = ${esc(de)} (S. ${pg})`};
+  if(l===2)return {kind:'mc',q:`Wie heißt „${de}“ auf Englisch?`,opts:[en,...others.slice(0,3).map(x=>x[0])],onResult:vokResult(en),
+   tip:`Das Wort steht auf Seite ${pg} im Vokabelteil.`,erk:`<b>${esc(de)}</b> = ${esc(en)} (S. ${pg})`};
+  return {kind:'text',q:'Schreib das englische Wort:',calc:de,a:vokForms(en),onResult:vokResult(en),
+   tip:`Anfangsbuchstabe: „${en.replace(/^to /,'')[0]}“, ${en.replace(/^to /,'').length} Zeichen. Steht auf Seite ${pg}.`,
+   erk:`<b>${esc(de)}</b> = ${esc(en)} (S. ${pg})`};
+ },
+ negq(l){
+  const [s,a]=pick(NEGQ);
+  return {kind:'text',q:'Make a negative question:',calc:s,a,
+   tip:'Hilfsverb + n’t steht vorne (Don’t, Didn’t, Haven’t, Aren’t, Weren’t, Can’t …), dann das Subjekt, dann das Vollverb. Fragewörter wie „Why“ kommen davor.',
+   erk:`Richtig: „${esc(s.replace('___',a[0]).replace(/ \([^)]*\)/,'').replace(/^Why why/i,'Why'))}“<br>Verneinte Frage: <b>Hilfsverb + n’t + Subjekt + Vollverb</b>. Mit „be“ als Vollverb: Isn’t / Aren’t / Wasn’t / Weren’t + Subjekt.`};
+ },
+ buch(l){
+  const [q,ok,w]=pick(BUCH[l]);
+  return {kind:'mc',q,opts:[ok,...w],tip:'Schlag die Seite im Buch auf und lies die Stelle nach.',erk:`Richtig: <b>${esc(ok)}</b>.`};
+ }
+});
+UEB.leonie.splice(0,0,
+ {id:'u-vok',gen:'vok',fach:'Englisch',titel:'Vokabeln Unit 1 (S. 173–180)',kurz:'Stufe 1: Englisch → Deutsch, Stufe 2: Deutsch → Englisch, Stufe 3: selbst schreiben',grp:'sa',check:null});
+UEB.leonie.splice(3,0,
+ {id:'u-buch',gen:'buch',fach:'Englisch',titel:'Fragen zu den Buchtexten',kurz:'S. 12–14 und S. 24, mit dem Buch daneben',grp:'sa',check:null});
+UEB.leonie.push({id:'u-negq',gen:'negq',fach:'Englisch',titel:'Negative questions (S. 139)',kurz:'Kommt laut Heft erst nach den Ferien dran',grp:'later',check:null});
+GRP.later='Englisch: nach den Ferien';
 
 /* ---------- Versand an Google-Tabelle ---------- */
 const SYNC_KEY='lernstand-sync-v1';
