@@ -503,6 +503,9 @@ function eltern(app){
 /* ================= ÜBEN: Aufgaben-Generatoren ================= */
 const ri=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
 const pick=a=>a[Math.floor(Math.random()*a.length)];
+const RECENT=new WeakMap();
+function fresh(a){let r=RECENT.get(a);if(!r)RECENT.set(a,r=[]);let c=a.filter(x=>!r.includes(x));if(!c.length)c=a;
+ const x=pick(c);r.push(x);while(r.length>Math.max(1,a.length-2))r.shift();return x}
 const gcd=(a,b)=>b?gcd(b,a%b):a;
 function zahl(n){
   const neg=n<0;n=Math.abs(n);
@@ -916,7 +919,14 @@ const PRULE={
  sp:'Passiv Simple Present: <b>am / is / are + 3. Form</b>. Verneint: isn’t / aren’t + 3. Form.',
  past:'Passiv Simple Past: <b>was / were + 3. Form</b>. Verneint: wasn’t / weren’t + 3. Form.'};
 const PASS={
- 1:[['English and French ___ (speak) in Canada.',['are spoken'],'sp'],
+ 1:[  ['The Olympic Games ___ (hold) every four years.',['are held'],'sp'],
+  ['This photo ___ (take) in Chicago last summer.',['was taken'],'past'],
+  ['The windows ___ (clean) every Friday.',['are cleaned'],'sp'],
+  ['The cake ___ (eat) by the children yesterday.',['was eaten'],'past'],
+  ['The Willis Tower ___ (build) in the 1970s.',['was built'],'past'],
+  ['Our car ___ (wash) every Saturday.',['is washed'],'sp'],
+  ['The songs ___ (sing) by a famous band in 1999.',['were sung'],'past'],
+  ['English and French ___ (speak) in Canada.',['are spoken'],'sp'],
   ['Maple syrup ___ (make) from the sap of maple trees.',['is made'],'sp'],
   ['The Statue of Liberty ___ (give) to the USA by France.',['was given'],'past'],
   ['Ice hockey ___ (play) by many children in Canada.',['is played'],'sp'],
@@ -928,7 +938,13 @@ const PASS={
   ['Breakfast ___ (serve) from 7 to 10 a.m.',['is served'],'sp'],
   ['King cakes ___ (make) by many families in New Orleans.',['are made'],'sp'],
   ['Robin ___ (take) to hospital yesterday.',['was taken'],'past']],
- 2:[['Credit cards ___ (not accept) in this shop.',["aren't accepted","are not accepted"],'sp'],
+ 2:[['The tickets ___ (not sell) online last year.',["weren't sold","were not sold"],'past'],
+  ['Dogs ___ (not allow) in this park.',["aren't allowed","are not allowed"],'sp'],
+  ['The game ___ (not cancel) yesterday.',["wasn't cancelled","was not cancelled","wasn't canceled","was not canceled"],'past'],
+  ['This song ___ (not sing) in English.',["isn't sung","is not sung"],'sp'],
+  ['The new bridge ___ (open) last month.',['was opened'],'past'],
+  ['Football ___ (call) “soccer” in the USA.',['is called'],'sp'],
+  ['Credit cards ___ (not accept) in this shop.',["aren't accepted","are not accepted"],'sp'],
   ['A microwave ___ (not need) for this recipe.',["isn't needed","is not needed"],'sp'],
   ['Our team ___ (not beat) last Saturday.',["wasn't beaten","was not beaten"],'past'],
   ['Fantastic costumes ___ (wear) at Mardi Gras every year.',['are worn'],'sp'],
@@ -940,7 +956,13 @@ const PASS={
   ['The players ___ (cheer) on by the fans.',['were cheered'],'past'],
   ['The new students ___ (not invite) to the party.',["weren't invited","were not invited"],'past'],
   ['Spanish ___ (speak) widely in Miami.',['is spoken'],'sp']],
- 3:[['„They built the CN Tower in the 1970s.“ → The CN Tower ___ in the 1970s.',['was built'],'past'],
+ 3:[['„Someone stole my phone yesterday.“ → My phone ___ yesterday.',['was stolen'],'past'],
+  ['„They grow oranges in Florida.“ → Oranges ___ in Florida.',['are grown'],'sp'],
+  ["„They didn't tell us the truth.“ → We ___ the truth.",["weren't told","were not told"],'past'],
+  ['„People speak French in Quebec.“ → French ___ in Quebec.',['is spoken'],'sp'],
+  ["„The teacher doesn't check our tests on Fridays.“ → Our tests ___ on Fridays.",["aren't checked","are not checked"],'sp'],
+  ['„Somebody wrote these songs in 1965.“ → These songs ___ in 1965.',['were written'],'past'],
+  ['„They built the CN Tower in the 1970s.“ → The CN Tower ___ in the 1970s.',['was built'],'past'],
   ['„Someone broke the window last night.“ → The window ___ last night.',['was broken'],'past'],
   ["„They don't sell newspapers here.“ → Newspapers ___ here.",["aren't sold","are not sold"],'sp'],
   ['„Hurricane Katrina destroyed many homes.“ → Many homes ___ by Hurricane Katrina.',['were destroyed'],'past'],
@@ -999,17 +1021,17 @@ function textOk(f,given){
 }
 Object.assign(GEN,{
  passive(l){
-  if(l===3&&Math.random()<.6){const [act,ok,...rest]=pick(PASS_MC);const t=rest.pop();
+  if(l===3&&Math.random()<.6){const [act,ok,...rest]=fresh(PASS_MC);const t=rest.pop();
    return {kind:'mc',q:`Which sentence is the correct passive form of: „${act}“`,opts:[ok,...rest],
     tip:'Das Objekt des Aktivsatzes wird zum Subjekt. Dann: Form von „be“ in der richtigen Zeit + 3. Form. Wer es tut, kommt mit „by“ ans Ende.',
     erk:`Richtig: „${esc(ok)}“<br>${PRULE[t]}`}}
-  const [s,a,t]=pick(PASS[l]);
+  const [s,a,t]=fresh(PASS[l]);
   return {kind:'text',q:'Put in the passive form:',calc:s,a,
    tip:'Achte auf die Zeit (every, usually → Present; yesterday, last, in 1937 → Past) und darauf, ob das Subjekt Einzahl oder Mehrzahl ist. Dann: Form von „be“ + 3. Form.',
    erk:`Richtig: „${esc(s.replace('___',a[0]).replace(/ \([^)]*\)/,''))}“<br>${PRULE[t]}`};
  },
  na(l){
-  const [q,ok,w]=pick(NA[l]);
+  const [q,ok,w]=fresh(NA[l]);
   return {kind:'mc',q,opts:[ok,...w],tip:'Denk an die Karte von Nordamerika aus deinem Buch (Zoom in – North America).',erk:`Richtig: <b>${esc(ok)}</b>.`};
  },
  read(l){
@@ -1057,21 +1079,41 @@ function vokForms(en){
  return [...out];
 }
 function vokResult(en){return ok=>{const W=(DB.vokw=DB.vokw||{}),k=vokKey(en);W[k]=Math.max(0,(W[k]||0)+(ok?-1:2));save(DB)}}
-const NEGQ=[
- ['___ on Saturday? (we · not can · meet)',["Can't we meet"]],
- ['___ ill yesterday? (you · not be)',["Weren't you"]],
- ['___ French? (you · not speak)',["Don't you speak","Didn't you speak"]],
- ['___ the article yet? (you · not read)',["Haven't you read"]],
- ['Why ___ at home last night? (you · not be)',["weren't you","Why weren't you"]],
- ['___ on vacation together last summer? (you · not go)',["Didn't you go"]],
- ['___ her parents recently? (you · not meet)',["Haven't you met"]],
- ['___ your parents there too? (not be)',["Weren't your parents"]],
- ['Why ___ English when they came to the USA? (your parents · not speak)',["didn't your parents speak","Why didn't your parents speak"]],
- ['___ pop music? (you · not like)',["Don't you like","Didn't you like"]],
- ['___ thirsty now too? (you · not be)',["Aren't you"]],
- ['Why ___ for a coffee in the cafeteria? (we · not go)',["don't we go","Why don't we go"]],
- ['___ coffee at all? (you · not drink)',["Don't you drink","Didn't you drink"]],
- ['___ your Cuban relatives? (you · not miss)',["Don't you miss","Didn't you miss"]]];
+const NEGQ={
+ 1:[['___ French? (you · not speak)',["Don't you speak","Didn't you speak"]],
+  ['___ pop music? (you · not like)',["Don't you like","Didn't you like"]],
+  ['___ coffee at all? (you · not drink)',["Don't you drink","Didn't you drink"]],
+  ['___ on vacation together last summer? (you · not go)',["Didn't you go"]],
+  ['___ your Cuban relatives? (you · not miss)',["Don't you miss","Didn't you miss"]],
+  ['___ in Miami? (your cousin · not live)',["Doesn't your cousin live","Didn't your cousin live"]],
+  ['___ your homework yesterday? (you · not do)',["Didn't you do"]],
+  ['___ Spanish at school? (Tyler · not learn)',["Doesn't Tyler learn","Didn't Tyler learn"]],
+  ['___ the film last night? (you · not watch)',["Didn't you watch"]],
+  ['___ basketball every day? (José · not train)',["Doesn't José train","Doesn't Jose train"]],
+  ['___ to the party last Saturday? (they · not come)',["Didn't they come"]],
+  ['___ the bus to school every morning? (your sister · not take)',["Doesn't your sister take"]]],
+ 2:[['___ on Saturday? (we · not can · meet)',["Can't we meet"]],
+  ['___ ill yesterday? (you · not be)',["Weren't you"]],
+  ['___ the article yet? (you · not read)',["Haven't you read"]],
+  ['___ her parents recently? (you · not meet)',["Haven't you met"]],
+  ['___ your parents there too? (not be)',["Weren't your parents","Aren't your parents"]],
+  ['___ thirsty now too? (you · not be)',["Aren't you"]],
+  ['___ swim? (you · not can)',["Can't you"]],
+  ['___ the Grand Canyon yet? (you · not see)',["Haven't you seen"]],
+  ['___ his homework yet? (Tom · not finish)',["Hasn't Tom finished"]],
+  ['___ happy in Seattle last year? (your parents · not be)',["Weren't your parents"]],
+  ['___ at school today? (Leonie · not be)',["Isn't Leonie","Wasn't Leonie"]],
+  ['___ me with my homework? (you · not can · help)',["Can't you help"]]],
+ 3:[['Why ___ at home last night? (you · not be)',["weren't you","Why weren't you"]],
+  ['Why ___ English when they came to the USA? (your parents · not speak)',["didn't your parents speak","Why didn't your parents speak"]],
+  ['Why ___ for a coffee in the cafeteria? (we · not go)',["don't we go","Why don't we go"]],
+  ['Why ___ the bus yesterday? (you · not take)',["didn't you take","Why didn't you take"]],
+  ['Why ___ to the cinema tonight? (we · not go)',["don't we go","Why don't we go"]],
+  ['Why ___ at school last week? (Tim · not be)',["wasn't Tim","Why wasn't Tim"]],
+  ['Why ___ me yet? (she · not call)',["hasn't she called","Why hasn't she called"]],
+  ['Why ___ English at home? (they · not speak)',["don't they speak","Why don't they speak"]],
+  ['Why ___ the answer? (you · not can · find)',["can't you find","Why can't you find"]],
+  ['Why ___ to Tyler’s party last Friday? (Ben · not go)',["didn't Ben go","Why didn't Ben go"]]]};
 const BUCH={
  1:[['p. 12: How many floors does the Willis Tower in Chicago have?','110',['100','120','90']],
   ['p. 12: How many US states can you see from the Skydeck on a nice day?','four',['two','three','five']],
@@ -1121,7 +1163,7 @@ const JAHR={
   ['p. 31: Which sentence gives a disadvantage of a job?','Really? But you’ll have to work at the weekends.',['I’d love to become a vet because I love animals.','Being a ski instructor is fun because you can ski every day.','I’d like to work on a ranch.']]]};
 Object.assign(GEN,{
  jahr(l){
-  const [q,ok,w]=pick(JAHR[l]);
+  const [q,ok,w]=fresh(JAHR[l]);
   return {kind:'mc',q,opts:[ok,...w],tip:'Lies die Stelle im Buch nach (Text „My roller coaster year“ S. 29, Aufgaben S. 30, „Talking about jobs“ S. 31).',erk:`Richtig: <b>${esc(ok)}</b>.`};
  },
  vok(l){
@@ -1136,13 +1178,13 @@ Object.assign(GEN,{
    erk:`<b>${esc(de)}</b> = ${esc(en)} (S. ${pg})`};
  },
  negq(l){
-  const [s,a]=pick(NEGQ);
+  const [s,a]=fresh(NEGQ[l]);
   return {kind:'text',q:'Make a negative question:',calc:s,a,
    tip:'Hilfsverb + n’t steht vorne (Don’t, Didn’t, Haven’t, Aren’t, Weren’t, Can’t …), dann das Subjekt, dann das Vollverb. Fragewörter wie „Why“ kommen davor.',
    erk:`Richtig: „${esc(s.replace('___',a[0]).replace(/ \([^)]*\)/,'').replace(/^Why why/i,'Why'))}“<br>Verneinte Frage: <b>Hilfsverb + n’t + Subjekt + Vollverb</b>. Mit „be“ als Vollverb: Isn’t / Aren’t / Wasn’t / Weren’t + Subjekt.`};
  },
  buch(l){
-  const [q,ok,w]=pick(BUCH[l]);
+  const [q,ok,w]=fresh(BUCH[l]);
   return {kind:'mc',q,opts:[ok,...w],tip:'Schlag die Seite im Buch auf und lies die Stelle nach.',erk:`Richtig: <b>${esc(ok)}</b>.`};
  }
 });
