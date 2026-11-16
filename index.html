@@ -1196,6 +1196,71 @@ UEB.leonie.splice(4,0,{id:'u-jahr',gen:'jahr',fach:'Englisch',titel:'A year abro
  {id:'u-negq',gen:'negq',fach:'Englisch',titel:'Negative questions (S. 139)',kurz:'Verneinte Fragen: Don’t you …? Haven’t you …?',grp:'sa',check:null});
 GRP.later='Englisch: nach den Ferien';
 
+/* ---------- Unregelmäßige Verben: 3. Form ---------- */
+const VERBS=[['be','was/were','been','sein'],['become','became','become','werden'],['begin','began','begun','beginnen'],['break','broke','broken','brechen; kaputt machen'],
+ ['bring','brought','brought','bringen'],['build','built','built','bauen'],['buy','bought','bought','kaufen'],['catch','caught','caught','fangen'],
+ ['choose','chose','chosen','wählen'],['come','came','come','kommen'],['cut','cut','cut','schneiden'],['do','did','done','tun; machen'],
+ ['drink','drank','drunk','trinken'],['drive','drove','driven','fahren'],['eat','ate','eaten','essen'],['fall','fell','fallen','fallen'],
+ ['feel','felt','felt','fühlen'],['find','found','found','finden'],['fly','flew','flown','fliegen'],['forget','forgot','forgotten','vergessen'],
+ ['get','got','got','bekommen'],['give','gave','given','geben'],['go','went','gone','gehen'],['grow','grew','grown','wachsen; anbauen'],
+ ['hear','heard','heard','hören'],['hide','hid','hidden','verstecken'],['hit','hit','hit','schlagen; treffen'],['hold','held','held','halten; abhalten'],
+ ['hurt','hurt','hurt','verletzen'],['keep','kept','kept','behalten'],['know','knew','known','wissen; kennen'],['leave','left','left','verlassen'],
+ ['lose','lost','lost','verlieren'],['make','made','made','machen; herstellen'],['meet','met','met','treffen'],['pay','paid','paid','bezahlen'],
+ ['put','put','put','legen; stellen'],['read','read','read','lesen'],['ride','rode','ridden','reiten; fahren'],['run','ran','run','rennen'],
+ ['say','said','said','sagen'],['see','saw','seen','sehen'],['sell','sold','sold','verkaufen'],['send','sent','sent','schicken'],
+ ['show','showed','shown','zeigen'],['sing','sang','sung','singen'],['sit','sat','sat','sitzen'],['sleep','slept','slept','schlafen'],
+ ['speak','spoke','spoken','sprechen'],['spend','spent','spent','ausgeben; verbringen'],['spread','spread','spread','(sich) ausbreiten'],
+ ['steal','stole','stolen','stehlen'],['swim','swam','swum','schwimmen'],['take','took','taken','nehmen; bringen'],['teach','taught','taught','unterrichten'],
+ ['tell','told','told','erzählen; sagen'],['think','thought','thought','denken'],['throw','threw','thrown','werfen'],['understand','understood','understood','verstehen'],
+ ['wear','wore','worn','tragen (Kleidung)'],['win','won','won','gewinnen'],['write','wrote','written','schreiben']];
+const VERB_FOCUS=['build','steal','speak','wear','hold','write','take','give','sing','make','sell','break','eat','see','grow','drink','know','bring','throw','choose','hide','forget'];
+const F3PASS=[
+ ['The window ___ (break) by a football yesterday.',['was broken'],'past'],
+ ['Hamburgers ___ (eat) all over the USA every day.',['are eaten'],'sp'],
+ ['The thief ___ (catch) by the police last night.',['was caught'],'past'],
+ ['Lots of oranges ___ (grow) in Florida every year.',['are grown'],'sp'],
+ ['This book ___ (write) by a famous author in 1960.',['was written'],'past'],
+ ['The keys ___ (find) under the sofa this morning.',['were found'],'past'],
+ ['The Super Bowl ___ (see) by millions of people every year.',['is seen'],'sp'],
+ ['My phone ___ (steal) at the station last week.',['was stolen'],'past'],
+ ['Many different languages ___ (speak) in New York.',['are spoken'],'sp'],
+ ['The first Disneyland ___ (build) in 1955.',['was built'],'past'],
+ ['Uniforms ___ (wear) at many schools in the USA.',['are worn'],'sp'],
+ ['The concert ___ (hold) in Central Park last summer.',['was held'],'past'],
+ ['The prizes ___ (give) to the winners yesterday.',['were given'],'past'],
+ ['Newspapers ___ (sell) at this shop every day.',['are sold'],'sp'],
+ ['The ball ___ (throw) over the fence yesterday.',['was thrown'],'past'],
+ ['Our homework ___ (do) on Mondays.',['is done'],'sp'],
+ ['The money ___ (hide) under the bed last month.',['was hidden'],'past'],
+ ['English ___ (teach) at all schools in Germany.',['is taught'],'sp'],
+ ['The new students ___ (show) around the school last Monday.',['were shown'],'past'],
+ ['A lot of coffee ___ (drink) in Seattle every day.',['is drunk'],'sp'],
+ ['The winners ___ (choose) by the teachers last week.',['were chosen'],'past'],
+ ['The song ___ (sing) in English at every concert.',['is sung'],'sp'],
+ ['The children ___ (tell) a story yesterday.',['were told'],'past'],
+ ['These cars ___ (make) in Detroit every year.',['are made'],'sp'],
+ ['The letters ___ (send) to Canada last week.',['were sent'],'past'],
+ ['Tickets ___ (not sell) at the door yesterday.',["weren't sold","were not sold"],'past'],
+ ['Phones ___ (not allow) in class.',["aren't allowed","are not allowed"],'sp'],
+ ['The game ___ (not win) by our team last Saturday.',["wasn't won","was not won"],'past']];
+const VERBS_F=VERBS.filter(v=>VERB_FOCUS.includes(v[0]));
+function wrongPP(v){const [inf,past,pp]=v;const reg=inf.endsWith('e')?inf+'d':inf+'ed';
+ const c=[past.split('/')[0],reg,inf+'en',inf+'n'].filter((x,i,a)=>x!==pp&&a.indexOf(x)===i);
+ while(c.length<3){const o=pick(VERBS)[2];if(o!==pp&&!c.includes(o))c.push(o)}return c.slice(0,3)}
+Object.assign(GEN,{
+ form3(l){
+  if(l<3){const pool=Math.random()<.6?VERBS_F:VERBS;const v=fresh(pool);const [inf,past,pp,de]=v;
+   const erk=`<b>${inf} – ${past} – ${pp}</b> (${esc(de)})<br>Die 3. Form braucht man fürs Passiv: is/are/was/were + <b>${pp}</b>.`;
+   if(l===1)return {kind:'mc',q:`Welche ist die 3. Form von „${inf}“ (${de})?`,opts:[pp,...wrongPP(v)],tip:'Die 3. Form ist die dritte Spalte in der Verbtabelle (go – went – gone).',erk};
+   return {kind:'text',q:'Schreib die 3. Form:',calc:`${inf} (${de})`,a:inf==='get'?['got','gotten']:[pp],tip:`Simple Past wäre „${past}“. Die 3. Form ist ${pp===past?'hier gleich':'anders'}.`,erk};}
+  const [s,a,t]=fresh(F3PASS);
+  return {kind:'text',q:'Put in the passive form:',calc:s,a,
+   tip:'1. Signalwort: every/usually → is/are, yesterday/last/in 1955 → was/were. 2. Einzahl oder Mehrzahl? 3. Dann die 3. Form.',
+   erk:`Richtig: „${esc(s.replace('___',a[0]).replace(/ \([^)]*\)/,''))}“<br>${PRULE[t]}`};
+ }
+});
+UEB.leonie.splice(UEB.leonie.findIndex(t=>t.id==='u-passive')+1,0,
+ {id:'u-form3',gen:'form3',fach:'Englisch',titel:'3. Form (unregelmäßige Verben)',kurz:'Stufe 1: auswählen, Stufe 2: selbst schreiben, Stufe 3: Passiv-Sätze damit',grp:'sa',check:null});
 /* ---------- Versand an Google-Tabelle ---------- */
 const SYNC_KEY='lernstand-sync-v1';
 function syncCfg(){try{return JSON.parse(localStorage.getItem(SYNC_KEY))||{}}catch(e){return {}}}
