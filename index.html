@@ -1549,6 +1549,58 @@ UEB.leonie.unshift(
  {id:'u-revo',gen:'revo',fach:'Geschichte',titel:'Französische Revolution',kurz:'Republik, Jakobiner, Robespierre, Urteil über Ludwig XVI.',grp:'akt',check:null});
 GRP.akt='Neu aus der Schule';
 GRP.sa='Englisch Unit 1 wiederholen';
+/* ---------- Leonie: Gleichungen Schritt für Schritt ---------- */
+const opS=b=>b>0?`| − ${zahl(b)}`:`| + ${zahl(-b)}`;
+Object.assign(GEN,{
+ gleichS(l){
+  const r=Math.random();
+  const T1='Was du auf der einen Seite machst, machst du auch auf der anderen. Ziel: x allein auf einer Seite.';
+  if(l===1){
+   const x=ri(1,12),a=ri(2,9),b=ri(1,25)*(Math.random()<.75?1:-1),c=a*x+b;
+   if(r<.3)return {kind:'num',q:`Schritt 1: Bring die ${zahl(Math.abs(b))} auf die andere Seite (${opS(b)} auf beiden Seiten). Welche Zahl steht dann rechts?`,calc:`${lin(a,b)} = ${zahl(c)}   →   ${a}x = ?`,a:c-b,
+    tip:b>0?`Die ${b} wird links addiert. Also rechnest du auf beiden Seiten − ${b}.`:`Links wird ${-b} abgezogen. Also rechnest du auf beiden Seiten + ${-b}.`,
+    erk:`${lin(a,b)} = ${zahl(c)}   ${opS(b)}<br>${a}x = ${zahl(c)} ${b>0?'−':'+'} ${zahl(Math.abs(b))} = <b>${zahl(c-b)}</b>`};
+   if(r<.6)return {kind:'num',q:`Schritt 2: Teile durch ${a} (| : ${a} auf beiden Seiten). x = ?`,calc:`${a}x = ${zahl(a*x)}`,a:x,
+    tip:`${a}x heißt ${a} · x. Das Gegenteil von „mal ${a}“ ist „durch ${a}“.`,erk:`${a}x = ${zahl(a*x)}   | : ${a}<br>x = ${zahl(a*x)} : ${a} = <b>${x}</b>`};
+   if(r<.8){const k=pick(['plus','minus','mal','durch']);let calc,erk,tip;const y=ri(2,15),m=ri(2,9);
+    if(k==='plus'){calc=`x + ${m} = ${y+m}`;erk=`| − ${m}<br>x = ${y+m} − ${m} = <b>${y}</b>`;tip=`Rechne auf beiden Seiten − ${m}.`}
+    else if(k==='minus'){calc=`x − ${m} = ${y}`;erk=`| + ${m}<br>x = ${y} + ${m} = <b>${y+m}</b>`;tip=`Rechne auf beiden Seiten + ${m}.`}
+    else if(k==='mal'){calc=`${m}x = ${m*y}`;erk=`| : ${m}<br>x = ${m*y} : ${m} = <b>${y}</b>`;tip=`Teile beide Seiten durch ${m}.`}
+    else {calc=`x : ${m} = ${y}`;erk=`| · ${m}<br>x = ${y} · ${m} = <b>${y*m}</b>`;tip=`Nimm beide Seiten mal ${m}.`}
+    return {kind:'num',q:'Löse die Gleichung. x = ?',calc,a:k==='minus'?y+m:k==='durch'?y*m:y,tip,erk}}
+   return {kind:'num',q:'Löse die Gleichung in zwei Schritten. x = ?',calc:`${lin(a,b)} = ${zahl(c)}`,a:x,
+    tip:`1. ${opS(b)} auf beiden Seiten. 2. | : ${a}.`,
+    erk:`${lin(a,b)} = ${zahl(c)}   ${opS(b)}<br>${a}x = ${zahl(c-b)}   | : ${a}<br>x = <b>${x}</b><br>Probe: ${a} · ${x} ${b>0?'+':'−'} ${zahl(Math.abs(b))} = ${zahl(c)} ✓`};
+  }
+  if(l===2){
+   const x=ri(-6,10)||3;
+   if(r<.3){const a=ri(4,9),c=ri(1,a-1),b=ri(-15,15)||4,d=(a-c)*x+b;
+    return {kind:'num',q:`Schritt 1: Bring alle x nach links (| − ${c}x auf beiden Seiten). Wie viele x stehen dann links?`,calc:`${lin(a,b)} = ${lin(c,d)}   →   ?x ${b>0?'+':'−'} ${zahl(Math.abs(b))} = ${zahl(d)}`,a:a-c,
+     tip:`Links stehen ${a}x. Davon ziehst du ${c}x ab.`,erk:`${lin(a,b)} = ${lin(c,d)}   | − ${c}x<br><b>${a-c}</b>x ${b>0?'+':'−'} ${zahl(Math.abs(b))} = ${zahl(d)}`};}
+   if(r<.6){const a=ri(4,9),c=ri(1,a-1),b=ri(-15,15)||4,d=(a-c)*x+b;
+    return {kind:'num',q:'Löse die Gleichung. x = ?',calc:`${lin(a,b)} = ${lin(c,d)}`,a:x,tip:'1. Alle x nach links. 2. Alle Zahlen nach rechts. 3. Durch die Zahl vor dem x teilen.',
+     erk:`${lin(a,b)} = ${lin(c,d)}   | − ${c}x<br>${lin(a-c,b)} = ${zahl(d)}   ${opS(b)}<br>${a-c===1?`x = <b>${zahl(x)}</b>`:`${a-c}x = ${zahl(d-b)}   | : ${a-c}<br>x = ${zahl(d-b)} : ${a-c} = <b>${zahl(x)}</b>`}`};}
+   if(r<.8){const k=ri(2,5),y=ri(1,9)*(Math.random()<.8?1:-1),xx=k*y,b=ri(1,12),c=y+b;
+    return {kind:'num',q:'Löse die Gleichung. x = ?',calc:`x : ${k} + ${b} = ${zahl(c)}`,a:xx,tip:`1. | − ${b}. 2. | · ${k}.`,
+     erk:`x : ${k} + ${b} = ${zahl(c)}   | − ${b}<br>x : ${k} = ${zahl(y)}   | · ${k}<br>x = <b>${zahl(xx)}</b>`};}
+   const a=ri(2,9),b=ri(-20,20)||5,cand=x+pick([0,0,1,-1,2]),lhs=a*cand+b;
+   return {kind:'num',q:`Probe: Setze x = ${zahl(cand)} in die linke Seite ein. Welche Zahl kommt heraus?`,calc:`${lin(a,b)}`,a:lhs,
+    tip:`Rechne ${a} · ${kl(cand)} ${b>0?'+':'−'} ${Math.abs(b)}. Punkt vor Strich.`,erk:`${a} · ${kl(cand)} ${b>0?'+':'−'} ${Math.abs(b)} = ${zahl(a*cand)} ${b>0?'+':'−'} ${Math.abs(b)} = <b>${zahl(lhs)}</b>`};
+  }
+  const x=ri(-5,10)||2;
+  if(r<.3){const a=ri(2,7),b=ri(-9,9)||3,c=a*(x+b);
+   return {kind:'num',q:`Schritt 1: Löse die Klammer auf. Welche Zahl steht dann statt dem ? (mit Vorzeichen)`,calc:`${a}(${lin(1,b)}) = ${zahl(c)}   →   ${a}x + ? = ${zahl(c)}`,a:a*b,
+    tip:`Jedes Glied in der Klammer mal ${a}: ${a} · x und ${a} · ${kl(b)}.`,erk:`${a}(${lin(1,b)}) = ${lin(a,a*b)}. Also steht dort <b>${zahl(a*b)}</b>.`};}
+  if(r<.6){const a=ri(2,7),b=ri(-9,9)||3,c=a*(x+b);
+   return {kind:'num',q:'Löse die Gleichung. x = ?',calc:`${a}(${lin(1,b)}) = ${zahl(c)}`,a:x,tip:'1. Klammer auflösen. 2. Zahl ohne x rüberbringen. 3. Durch die Zahl vor dem x teilen.',
+    erk:`${a}(${lin(1,b)}) = ${zahl(c)}<br>${lin(a,a*b)} = ${zahl(c)}   ${opS(a*b)}<br>${a}x = ${zahl(c-a*b)}   | : ${a}<br>x = <b>${zahl(x)}</b>`};}
+  const a=ri(3,7),bb=ri(1,6),c=ri(1,a-1),d=a*(x-bb)-c*x;
+  return {kind:'num',q:'Löse die Gleichung. x = ?',calc:`${a}(x − ${bb}) = ${lin(c,d)}`,a:x,tip:'1. Klammer auflösen. 2. Alle x nach links. 3. Zahlen nach rechts. 4. Teilen.',
+   erk:`${a}(x − ${bb}) = ${lin(c,d)}<br>${lin(a,-a*bb)} = ${lin(c,d)}   | − ${c}x<br>${lin(a-c,-a*bb)} = ${zahl(d)}   | + ${a*bb}<br>${a-c===1?'x':(a-c)+'x'} = ${zahl(d+a*bb)}${a-c===1?'':`   | : ${a-c}`}<br>x = <b>${zahl(x)}</b>`};
+ }
+});
+UEB.leonie.unshift({id:'u-gleichs',gen:'gleichS',fach:'Mathe',titel:'Gleichungen Schritt für Schritt',kurz:'Erst ein Schritt, dann ganze Gleichungen, mit Klammern',grp:'akt',check:null});
+(UEB.leonie.find(t=>t.id==='u-gleich')||{}).grp='akt';
 /* ---------- Versand an Google-Tabelle ---------- */
 const SYNC_KEY='lernstand-sync-v1';
 function syncCfg(){try{return JSON.parse(localStorage.getItem(SYNC_KEY))||{}}catch(e){return {}}}
