@@ -332,7 +332,7 @@ function kidView(app){
   const wallet=`<div class="wallet"><span class="big">★ ${n} Sterne</span>${b?`<span>Dein Abzeichen: <b>${b[1]}</b></span>`:''}
     ${nb?`<div class="meter" aria-hidden="true"><i style="width:${Math.round(100*(n-prevB)/(nb[0]-prevB))}%;background:var(--star)"></i></div><span class="muted">Noch ${nb[0]-n} Sterne bis „${nb[1]}“</span>`:'<span class="muted">Du hast alle Abzeichen!</span>'}</div>`;
   const grp={};UEB[S.kid].forEach(t=>(grp[t.grp]=grp[t.grp]||[]).push(t));
-  const ueb=['sa','emp','fit','neu','later'].filter(g=>grp[g]).map(g=>`<div class="section"><span class="fach">${GRP[g]}</span>${grp[g].map(t=>{
+  const ueb=['akt','emp','sa','fit','neu','later'].filter(g=>grp[g]).map(g=>`<div class="section"><span class="fach">${GRP[g]}</span>${grp[g].map(t=>{
     const u=peekU(S.kid,t.id);
     const right=u&&u.total?`<span class="lvl">Stufe ${u.lvl}<span class="lvlbar">${[1,2,3].map(i=>`<i class="${i<=u.lvl?'on':''}"></i>`).join('')}</span></span>`:'<span class="pill open">Neu</span>';
     return `<button class="topic" data-u="${t.id}"><span class="t"><b>${t.titel}</b><span class="muted">${t.kurz}</span><span class="tag">${t.fach}</span></span>${right}</button>`}).join('')}</div>`).join('');
@@ -843,7 +843,7 @@ function uebenView(app){
   let ok,given;
   if(f.kind==='mc'){ok=sel===0;given=f.opts[sel]}
   else if(f.kind==='text'){given=$('#in0').value;ok=textOk(f,given)}
-  else if(f.kind==='num'){const v=parseNum($('#in0').value);ok=Math.abs(v-f.a)<1e-6;given=$('#in0').value}
+  else if(f.kind==='num'){const v=parseNum($('#in0').value);ok=Math.abs(v-f.a)<1e-6||(f.alt||[]).some(x=>Math.abs(v-x)<1e-6);given=$('#in0').value}
   else{const a=parseNum($('#in0').value),b=parseNum($('#in1').value);ok=a===f.a[0]&&b===f.a[1];given=f.kind==='time'?a+':'+String(b).padStart(2,'0'):a+' Rest '+b}
   finish(ok,given,false);
  };
@@ -1261,6 +1261,294 @@ Object.assign(GEN,{
 });
 UEB.leonie.splice(UEB.leonie.findIndex(t=>t.id==='u-passive')+1,0,
  {id:'u-form3',gen:'form3',fach:'Englisch',titel:'3. Form (unregelmäßige Verben)',kurz:'Stufe 1: auswählen, Stufe 2: selbst schreiben, Stufe 3: Passiv-Sätze damit',grp:'sa',check:null});
+/* ================= Neue Schulthemen 19.11. ================= */
+const r6=x=>Math.round(x*1e6)/1e6;
+const sig2=x=>Number(Number(x).toPrecision(2));
+const kz=x=>zahl(r6(x));
+/* ---------- Marvin: Malnehmen mit Zehnerzahlen (Multi-Schiffe) ---------- */
+const ZSACH=[
+ ['In eine Kiste passen {Z} Flaschen. Wie viele Flaschen sind in {a} Kisten?','Flaschen'],
+ ['Ein Bus hat {Z} Sitzplätze. Wie viele Plätze haben {a} Busse zusammen?','Plätze'],
+ ['Ein Buch hat {Z} Seiten. Wie viele Seiten haben {a} solche Bücher?','Seiten'],
+ ['Eine Packung hat {Z} Gummibärchen. Wie viele sind in {a} Packungen?','Gummibärchen'],
+ ['Ein Eintritt kostet {Z} Cent. Wie viel Cent zahlen {a} Kinder?','Cent'],
+ ['Lena läuft jeden Tag {Z} Meter zum Bus. Wie viele Meter sind das an {a} Tagen?','Meter']];
+Object.assign(GEN,{
+ zehner(l){
+  if(l===1){
+   const a=ri(2,9),z=Math.random()<.15?100:ri(1,9)*10;
+   return {kind:'num',q:'Rechne:',calc:`${a} · ${z}`,a:a*z,
+    tip:z===100?`Mit 100 malnehmen: Hänge zwei Nullen an.`:`Rechne zuerst ${a} · ${z/10}. Dann hängst du eine 0 an.`,
+    erk:z===100?`${a} · 100 = <b>${a*100}</b> (zwei Nullen anhängen).`:`${a} · ${z/10} = ${a*z/10}, mit 0 dran: ${a} · ${z} = <b>${zahl(a*z)}</b>.`};
+  }
+  if(l===2){
+   const r=Math.random();
+   if(r<.35){const a=ri(2,9),z=ri(2,9)*10;
+    return {kind:'num',q:'Welche Zahl fehlt?',calc:`___ · ${z} = ${a*z}`,a,
+     tip:`Wie oft passt ${z} in ${a*z}? Denk an das kleine Einmaleins: ? · ${z/10} = ${a*z/10}.`,
+     erk:`${a} · ${z} = ${a*z}, also fehlt die <b>${a}</b>.`};}
+   if(r<.7){const a=ri(2,9),z=ri(2,9)*10;
+    return {kind:'num',q:'Welche Zehnerzahl fehlt?',calc:`${a} · ___ = ${a*z}`,a:z,
+     tip:`Rechne ${a*z} : ${a}. Ohne die 0: ${a*z/10} : ${a} = ${z/10}. Dann die 0 wieder dran.`,
+     erk:`${a*z} : ${a} = ${z}, also fehlt die <b>${z}</b>. Probe: ${a} · ${z} = ${a*z}.`};}
+   const a=ri(11,19),z=ri(2,9)*10;
+   return {kind:'num',q:'Rechne:',calc:`${a} · ${z}`,a:a*z,
+    tip:`Zerlege ${a} in 10 und ${a-10}: Rechne 10 · ${z} und ${a-10} · ${z} und zähle beides zusammen.`,
+    erk:`10 · ${z} = ${10*z}<br>${a-10} · ${z} = ${(a-10)*z}<br>${10*z} + ${(a-10)*z} = <b>${zahl(a*z)}</b>.`};
+  }
+  const r=Math.random(),z=ri(2,9)*10;
+  if(r<.35){const a=ri(3,9);
+   return {kind:'num',q:`Multi-Schiff: Oben im Segel steht „· ?“. In einer Zeile steht: ${a} | ${a*z}. Welche Zahl steht oben im Segel?`,a:z,
+    tip:`Welche Zahl mal ${a} ergibt ${a*z}? Rechne ${a*z} : ${a}.`,
+    erk:`${a*z} : ${a} = ${z}. Im Segel steht <b>· ${z}</b>.`};}
+  if(r<.7){let a,b;do{a=ri(2,9);b=ri(3,14)}while(a===b);
+   return {kind:'num',q:`Multi-Schiff: Oben im Segel fehlt die Zahl. In einer Zeile steht: ${a} | ${a*z}. Was steht in der Zeile mit ${b}?`,a:b*z,
+    tip:`Finde zuerst die Zahl im Segel: ${a*z} : ${a}. Dann rechne ${b} · diese Zahl.`,
+    erk:`Segel: ${a*z} : ${a} = ${z}.<br>Dann: ${b} · ${z} = <b>${zahl(b*z)}</b>.`};}
+  const [t,u]=pick(ZSACH),a=ri(3,9);
+  return {kind:'num',q:t.replace('{Z}',z).replace('{a}',a),unit:u,a:a*z,
+   tip:`Rechne ${a} · ${z}. Erst ${a} · ${z/10}, dann eine 0 dran.`,erk:`${a} · ${z} = <b>${zahl(a*z)} ${u}</b>.`};
+ }
+});
+/* ---------- Leonie Physik: Länge, Zeit, Einheiten ---------- */
+function sigTask(){const n=ri(2,5);let d=String(ri(1,9));for(let i=1;i<n;i++)d+=ri(0,9);
+ if(Math.random()<.45)d=d.slice(0,-1)+'0';
+ let s;if(Math.random()<.45)s='0,'+'0'.repeat(ri(0,2))+d;else{const p=ri(1,n-1);s=d.slice(0,p)+','+d.slice(p)}
+ return [s,n]}
+const EINH_L=[['km','m',1000],['m','cm',100],['m','mm',1000],['m','dm',10],['dm','cm',10],['cm','mm',10]];
+const EINH_T=[['h','min',60],['min','s',60],['h','s',3600],['d','h',24]];
+const EINH_MC=[
+ ['Was bezeichnet man in der Physik als Grundgröße?','alles, was gemessen werden kann',['nur die Länge','alles, was man sehen kann','nur Größen mit der Einheit Meter']],
+ ['Welches Symbol hat die Länge?','l',['L','m','s']],
+ ['Welches Symbol hat die Zeit?','t',['z','s','h']],
+ ['Was ist die Einheit der Zeit in der Physik?','die Sekunde (s)',['die Minute (min)','die Stunde (h)','der Tag (d)']],
+ ['Welches dieser Messgeräte misst am genauesten?','Schraubenmikrometer',['Maßband','Meterstab','Geodreieck']],
+ ['Welches Messgerät ist genauer als ein Geodreieck?','Schieblehre',['Maßband','Meterstab','Zollstock']],
+ ['Ändert sich beim Umrechnen in eine andere Einheit die Messgenauigkeit?','Nein, die Messgenauigkeit bleibt gleich.',['Ja, sie wird größer.','Ja, sie wird kleiner.','Nur bei Zehnerpotenzen.']],
+ ['Warum sind gemessene Größen nie ganz exakt?','Weil immer Messfehler auftreten können.',['Weil man immer runden muss.','Weil Messgeräte immer kaputt sind.','Weil die Einheiten ungenau sind.']],
+ ['Welcher Messfehler wird durch den Menschen verursacht?','ungenaues Ablesen',['das Gerät ist falsch geeicht','das Gerät ist defekt','ein verbogenes Maßband']],
+ ['Welcher Messfehler wird durch das Messgerät verursacht?','Das Gerät ist falsch geeicht.',['ungenaues Ablesen','Das Gerät wird falsch bedient.','Man liest schräg von der Seite ab.']],
+ ['Welche Längeneinheit wird in der Physik verwendet?','Meter',['Fuß','Elle','Zoll']],
+ ['Mit welchem Gerät misst man die Zeit?','mit einer Uhr',['mit einer Schieblehre','mit einem Maßband','mit einem Kraftmesser']],
+ ['Was ist eine Zeitspanne?','die Dauer zwischen zwei Zeitpunkten',['ein genau bestimmter Moment','eine Uhrzeit','die Einheit der Zeit']],
+ ['Was ist ein Zeitpunkt?','ein genau bestimmter Moment',['die Dauer zwischen zwei Momenten','eine Stunde','die Zeit, die ein Weg dauert']]];
+const ZEITPS=[['Der Film beginnt um 20:15 Uhr.','Zeitpunkt'],['Die Fahrt dauert 2 Stunden.','Zeitspanne'],['Der Wecker klingelt um 6:30 Uhr.','Zeitpunkt'],['Die Pause ist 15 Minuten lang.','Zeitspanne'],
+ ['Am 17. Januar 1793 fiel das Urteil.','Zeitpunkt'],['Der Läufer braucht 12,4 s für 100 m.','Zeitspanne'],['Um Mitternacht beginnt das neue Jahr.','Zeitpunkt'],['Das Spiel geht 90 Minuten.','Zeitspanne'],
+ ['Der Zug fährt um 7:42 Uhr ab.','Zeitpunkt'],['Die Schulstunde dauert 45 Minuten.','Zeitspanne']];
+Object.assign(GEN,{
+ einheit(l){
+  const fmt=(x)=>kz(x);
+  if(l===1){
+   if(Math.random()<.55){const [g,k,f]=pick(EINH_L);const down=Math.random()<.5;
+    const v=down?pick([0.5,1.5,2,2.5,3.2,4,0.25,0.75,1.2,7,12.5]):pick([5,20,45,250,600,1500,75,8,120,3500]);
+    const res=r6(down?v*f:v/f);
+    return {kind:'num',q:'Wandle um:',calc:`${fmt(v)} ${down?g:k} = ? ${down?k:g}`,unit:down?k:g,a:res,
+     tip:`1 ${g} = ${zahl(f)} ${k}. Von ${down?g+' nach '+k+' malnehmen':k+' nach '+g+' teilen'} mit ${zahl(f)}.`,
+     erk:`${fmt(v)} ${down?g:k} ${down?'·':':'} ${zahl(f)} = <b>${fmt(res)} ${down?k:g}</b>`};}
+   const r=Math.random();
+   if(r<.3){const h=ri(1,3),m=ri(5,55);
+    return {kind:'num',q:'Wandle um:',calc:`${h} h ${m} min = ? min`,unit:'min',a:h*60+m,tip:'1 h = 60 min.',erk:`${h} · 60 min + ${m} min = <b>${h*60+m} min</b>`};}
+   const [g,k,f]=pick(EINH_T);const down=Math.random()<.65;
+   const v=down?pick(g==='d'?[2,3,7,0.5]:[0.5,1.5,2,2.5,3,1.25,0.25,0.75]):pick(f===3600?[1800,7200,5400,900]:f===24?[48,72,12]:[30,90,150,120,45,75]);
+   const res=r6(down?v*f:v/f);
+   return {kind:'num',q:'Wandle um:',calc:`${fmt(v)} ${down?g:k} = ? ${down?k:g}`,unit:down?k:g,a:res,
+    tip:`1 ${g} = ${zahl(f)} ${k}.`,erk:`${fmt(v)} ${down?g:k} ${down?'·':':'} ${zahl(f)} = <b>${fmt(res)} ${down?k:g}</b>`};
+  }
+  if(l===2){
+   const r=Math.random();
+   if(r<.3){const [s,n]=sigTask();
+    return {kind:'num',q:`Wie viele sinnvolle Ziffern hat die Messung ${s} m?`,a:n,
+     tip:'Zähle ab der ersten Ziffer, die nicht 0 ist. Nullen am Anfang zählen nicht, Nullen am Ende (nach dem Komma) zählen mit.',
+     erk:`${s} m hat <b>${n}</b> sinnvolle Ziffern. Die Nullen vor der ersten Ziffer ungleich 0 zählen nicht, eine 0 am Ende zählt mit.`};}
+   if(r<.55){const P=[['1 km','m',3],['1 mm','m',-3],['1 cm','m',-2],['1 dm','m',-1],['0,001 m','m',-3],['0,01 m','m',-2],['1000 m','m',3],['0,1 m','m',-1]];const [a,u,e]=pick(P);
+    return {kind:'num',q:`Schreibe mit Zehnerpotenz: ${a} = 1 · 10^? ${u}. Welche Hochzahl gehört hin?`,a:e,
+     tip:'Positive Hochzahl: so viele Nullen hinter der 1 (10³ = 1000). Negative Hochzahl: 10⁻³ = 1/1000 = 0,001.',
+     erk:`${a} = 1 · 10<sup>${e}</sup> ${u}. Die Hochzahl ist <b>${zahl(e)}</b>.`};}
+   if(r<.75){const [s,t]=pick(ZEITPS);return {kind:'mc',q:`„${s}“ Ist das ein Zeitpunkt oder eine Zeitspanne?`,opts:[t,t==='Zeitpunkt'?'Zeitspanne':'Zeitpunkt'],
+     tip:'Zeitpunkt = ein bestimmter Moment (Uhrzeit, Datum). Zeitspanne = wie lange etwas dauert.',erk:`Das ist eine <b>${t}</b>.`};}
+   const [q,ok,w]=fresh(EINH_MC);return {kind:'mc',q,opts:[ok,...w],tip:'Schau im Heft unter „Die Länge“, „Messfehler“ und „Die Zeit“ nach.',erk:`Richtig: <b>${esc(ok)}</b>.`};
+  }
+  const r=Math.random();
+  if(r<.35){const m=pick([2,3,4,5,6,7,8,9]),e=pick([-3,-2,-1,2,3]);const val=r6(m*Math.pow(10,e));
+   return {kind:'num',q:`Schreibe als Kommazahl bzw. ganze Zahl: ${m} · 10^${e} m = ? m`,unit:'m',a:val,
+    tip:e>0?`10^${e} hat ${e} Nullen. Also ${m} mit ${e} Nullen.`:`10^${e} heißt: Komma um ${-e} Stelle${e===-1?'':'n'} nach links.`,
+    erk:`${m} · 10<sup>${e}</sup> m = <b>${zahl(val)} m</b>`};}
+  if(r<.6){const [s,n]=sigTask();const k=Math.random()<.5;
+   return {kind:'num',q:`Die Messung ${s} m wird in ${k?'km':'cm'} umgerechnet. Wie viele sinnvolle Ziffern hat das Ergebnis?`,a:n,
+    tip:'Beim Umrechnen ändert sich die Messgenauigkeit nicht.',erk:`Weiter <b>${n}</b> sinnvolle Ziffern. Beim Umrechnen ändert sich die Messgenauigkeit nicht.`};}
+  if(r<.8){const h=ri(1,4),m=ri(1,59),s=ri(1,59);
+   return {kind:'num',q:'Wandle um:',calc:`${h} h ${m} min ${s} s = ? s`,unit:'s',a:h*3600+m*60+s,tip:'1 h = 3600 s, 1 min = 60 s.',
+    erk:`${h} · 3600 s + ${m} · 60 s + ${s} s = ${h*3600} s + ${m*60} s + ${s} s = <b>${zahl(h*3600+m*60+s)} s</b>`};}
+  const [q,ok,w]=fresh(EINH_MC);return {kind:'mc',q,opts:[ok,...w],tip:'Schau im Heft unter „Die Länge“, „Messfehler“ und „Die Zeit“ nach.',erk:`Richtig: <b>${esc(ok)}</b>.`};
+ }
+});
+/* ---------- Leonie Physik: Geschwindigkeit ---------- */
+const VKMH=[18,27,36,45,54,63,72,81,90,108];
+const GESCHW_MC=[
+ ['Was bedeutet „gleichförmige Bewegung“?','Der Körper bewegt sich geradlinig und legt in gleichen Zeiten gleich lange Wege zurück.',['Der Körper wird immer schneller.','Der Körper fährt im Kreis.','Der Körper bleibt stehen.']],
+ ['Bei einer gleichförmigen Bewegung gilt:','s ~ t, also s : t = konstant',['s · t = konstant','s und t haben nichts miteinander zu tun','t wird kleiner, wenn s größer wird']],
+ ['Wie sieht das s-t-Diagramm einer gleichförmigen Bewegung aus?','eine Gerade durch den Ursprung',['eine waagrechte Linie','eine Kurve nach oben','eine senkrechte Linie']],
+ ['Welche Formel stimmt?','v = s : t',['v = s · t','v = t : s','s = v : t']],
+ ['Welches Symbol hat die Geschwindigkeit?','v',['g','s','t']],
+ ['1 m/s sind wie viel km/h?','3,6 km/h',['36 km/h','1000 km/h','60 km/h']],
+ ['Wie rechnet man km/h in m/s um?','durch 3,6 teilen',['mal 3,6 nehmen','durch 60 teilen','mal 1000 nehmen']],
+ ['Wie schnell ist Schall in der Luft ungefähr?','340 m/s',['34 m/s','3400 m/s','3,4 m/s']],
+ ['Wie schnell geht ein Fußgänger ungefähr?','5 km/h',['50 km/h','0,5 km/h','15 km/h']],
+ ['Wie formt man v = s : t nach s um?','s = v · t',['s = v : t','s = t : v','s = v + t']],
+ ['Wie formt man v = s : t nach t um?','t = s : v',['t = v : s','t = s · v','t = v · s']]];
+const NAMEN=['Franzi','Tom','Lea','Ben','Mia','Paul','Emma','Noah'];
+function vSchema(g,ges,gl,rech,ant){return `<b>Gegeben:</b> ${g}<br><b>Gesucht:</b> ${ges}<br><b>Gleichung:</b> ${gl}<br><b>Rechnung:</b> ${rech}<br><b>Antwort:</b> ${ant}`}
+Object.assign(GEN,{
+ geschw(l){
+  if(l===1){
+   const r=Math.random();
+   if(r<.35){const k=pick(VKMH),m=r6(k/3.6);
+    return {kind:'num',q:'Rechne in m/s um:',calc:`${k} km/h = ? m/s`,unit:'m/s',a:m,tip:'km/h → m/s: durch 3,6 teilen.',erk:`${k} : 3,6 = <b>${kz(m)} m/s</b>`};}
+   if(r<.7){const m=pick([2,4,5,10,12,15,20,25,30,40,2.5,7.5,12.5]),k=r6(m*3.6);
+    return {kind:'num',q:'Rechne in km/h um:',calc:`${kz(m)} m/s = ? km/h`,unit:'km/h',a:k,tip:'m/s → km/h: mal 3,6.',erk:`${kz(m)} · 3,6 = <b>${kz(k)} km/h</b>`};}
+   const [q,ok,w]=fresh(GESCHW_MC);return {kind:'mc',q,opts:[ok,...w],tip:'v = s : t. 1 m/s = 3,6 km/h.',erk:`Richtig: <b>${esc(ok)}</b>.`};
+  }
+  if(l===2){
+   const r=Math.random();
+   if(r<.3){const v=ri(2,25),t=ri(4,40);
+    return {kind:'num',q:`Ein Körper legt ${v*t} m in ${t} s zurück. Wie groß ist seine Geschwindigkeit?`,unit:'m/s',a:v,tip:'v = s : t',
+     erk:vSchema(`s = ${v*t} m, t = ${t} s`,'v in m/s','v = s : t',`v = ${v*t} m : ${t} s`,`<b>v = ${v} m/s</b>`)};}
+   if(r<.55){const v=pick([30,40,50,60,70,80,90,100,120]),t=pick([0.5,1.5,2,2.5,3,4]),s=r6(v*t);
+    return {kind:'num',q:`Ein Auto fährt ${kz(t)} h lang mit ${v} km/h. Wie weit kommt es?`,unit:'km',a:s,tip:'s = v · t',
+     erk:vSchema(`v = ${v} km/h, t = ${kz(t)} h`,'s in km','v = s : t | · t  →  s = v · t',`s = ${v} km/h · ${kz(t)} h`,`<b>s = ${kz(s)} km</b>`)};}
+   if(r<.75){const v=ri(2,20),t=ri(5,30);
+    return {kind:'num',q:`Wie lange braucht ein Körper mit ${v} m/s für ${v*t} m?`,unit:'s',a:t,tip:'t = s : v',
+     erk:vSchema(`v = ${v} m/s, s = ${v*t} m`,'t in s','v = s : t  →  t = s : v',`t = ${v*t} m : ${v} m/s`,`<b>t = ${t} s</b>`)};}
+   if(r<.9){const v=pick([0.11,0.12,0.15,0.2,0.25]),ts=[1,2,3,4,5,6].map(t=>[t,r6(v*t)]);const sh=shuffle(ts).slice(0,3).sort((a,b)=>a[0]-b[0]);
+    return {kind:'num',q:`Eine Spielzeugeisenbahn fährt gleichförmig. Messwerte: ${sh.map(x=>`t = ${x[0]} s → s = ${kz(x[1])} m`).join('; ')}. Wie groß ist v?`,unit:'m/s',a:v,
+     tip:'Bei gleichförmiger Bewegung ist s : t immer gleich. Teile einen Weg durch die zugehörige Zeit.',erk:`${kz(sh[0][1])} m : ${sh[0][0]} s = <b>${kz(v)} m/s</b> (bei allen Messwerten gleich).`};}
+   const [q,ok,w]=fresh(GESCHW_MC);return {kind:'mc',q,opts:[ok,...w],tip:'v = s : t. 1 m/s = 3,6 km/h.',erk:`Richtig: <b>${esc(ok)}</b>.`};
+  }
+  const r=Math.random(),n=pick(NAMEN);
+  if(r<.4){const k=pick(VKMH),m=r6(k/3.6),t=ri(6,40),s=r6(m*t),al=[sig2(s)];
+   return {kind:'num',q:k<=36?`${n} fährt mit ${k} km/h Rad. Berechne die Strecke in m, die ${n} in ${t},0 s zurücklegt.`:`Ein Auto fährt mit ${k} km/h. Berechne die Strecke in m, die es in ${t},0 s zurücklegt.`,unit:'m',a:s,alt:al,
+    tip:'Erst km/h in m/s umrechnen (: 3,6), dann s = v · t. Ergebnis auf 2 sinnvolle Ziffern runden ist auch richtig.',
+    erk:vSchema(`v = ${k} km/h = ${kz(m)} m/s, t = ${t},0 s`,'s in m','v = s : t | · t  →  s = v · t',`s = ${kz(m)} m/s · ${t},0 s = ${kz(s)} m`,`<b>s ≈ ${kz(sig2(s))} m</b> (2 sinnvolle Ziffern, weil ${k} km/h nur 2 hat)`)};}
+  if(r<.75){let k,m,s,t;do{k=pick(VKMH);m=r6(k/3.6);s=ri(4,30)*30;t=r6(s/m)}while(Math.abs(Math.round(t*100)-t*100)>1e-6||t<5);
+   return {kind:'num',q:`Ein Zug fährt mit ${k} km/h durch einen ${s} m langen Bahnhof. Berechne die Zeit in s, bis die Spitze des Zugs am Bahnhofsende ist.`,unit:'s',a:t,alt:[sig2(t)],
+    tip:'Erst km/h in m/s umrechnen (: 3,6), dann t = s : v. Auf 2 sinnvolle Ziffern runden ist auch richtig.',
+    erk:vSchema(`v = ${k} km/h = ${kz(m)} m/s, s = ${s} m`,'t in s','v = s : t  →  t = s : v',`t = ${s} m : ${kz(m)} m/s = ${kz(t)} s`,`<b>t ≈ ${kz(sig2(t))} s</b> (2 sinnvolle Ziffern)`)};}
+  let s,t,v;do{s=ri(2,30);t=pick([10,12,15,20,30,40,45]);v=s*60/t}while(v%1||v>130);
+  return {kind:'num',q:`${n} fährt ${s} km in ${t} min. Wie groß ist die Geschwindigkeit in km/h?`,unit:'km/h',a:v,
+   tip:'Rechne die Zeit in Stunden um (min : 60), dann v = s : t.',
+   erk:vSchema(`s = ${s} km, t = ${t} min = ${kz(t/60)} h`,'v in km/h','v = s : t',`v = ${s} km : ${kz(t/60)} h`,`<b>v = ${v} km/h</b>`)};
+ }
+});
+/* ---------- Leonie Physik: Kraft ---------- */
+const KW=[['Ein Sturm entwurzelt einen Baum.','Verformung, plastisch'],['Ein Auto wird bei einem Unfall verbeult.','Verformung, plastisch'],['Eine leere Dose wird zerdrückt.','Verformung, plastisch'],['Du formst Knete zu einer Kugel.','Verformung, plastisch'],['Ein Ast bricht ab.','Verformung, plastisch'],
+ ['Du drückst einen Ball zusammen und lässt los.','Verformung, elastisch'],['Ein Gummiband wird gedehnt und schnellt zurück.','Verformung, elastisch'],['Eine Feder wird kurz zusammengedrückt.','Verformung, elastisch'],['Ein Trampolin gibt beim Springen nach.','Verformung, elastisch'],
+ ['Ein Radfahrer bremst.','Änderung der Geschwindigkeit'],['Eine Rakete startet.','Änderung der Geschwindigkeit'],['Ein Auto beschleunigt an der Ampel.','Änderung der Geschwindigkeit'],['Ein Sprinter startet aus dem Startblock.','Änderung der Geschwindigkeit'],
+ ['Ein Fußballer macht einen Kopfball.','Änderung der Bewegungsrichtung'],['Eine Radfahrerin lenkt in eine Kurve.','Änderung der Bewegungsrichtung'],['Ein Magnet lenkt eine rollende Stahlkugel zur Seite ab.','Änderung der Bewegungsrichtung']];
+const KW_O=['Verformung, plastisch','Verformung, elastisch','Änderung der Geschwindigkeit','Änderung der Bewegungsrichtung'];
+const KA=[['Ein Magnet hält einen Zettel an der Tafel.','Magnetische Kraft'],['Ein Tabletstift haftet am Tablet.','Magnetische Kraft'],['Eine Kompassnadel zeigt nach Norden.','Magnetische Kraft'],
+ ['Nach dem Reiben an einem Ballon stehen die Haare ab.','Elektrische Kraft'],['Ein geriebener Kamm zieht kleine Papierschnipsel an.','Elektrische Kraft'],
+ ['Eine Turmspringerin fällt ins Wasser.','Gewichtskraft'],['Ein Apfel fällt vom Baum.','Gewichtskraft'],
+ ['Die Fahrradbremse bremst das Rad ab.','Reibungskraft'],['Ein Schlitten wird auf Sand langsamer.','Reibungskraft'],
+ ['Ein Heißluftballon steigt nach oben.','Auftriebskraft'],['Ein Stück Holz schwimmt auf dem Wasser.','Auftriebskraft'],
+ ['Eine Rakete hebt ab.','Schubkraft'],['Ein Pferd zieht die Kutsche an.','Zugkraft'],['Ein Traktor zieht einen Anhänger.','Zugkraft'],['Du drückst einen Reißnagel in die Wand.','Druckkraft']];
+const KA_O=['Magnetische Kraft','Elektrische Kraft','Gewichtskraft','Reibungskraft','Auftriebskraft','Schubkraft','Zugkraft','Druckkraft'];
+const KRAFT_MC=[
+ ['Woran erkennt man eine Kraft?','an ihrer Wirkung',['an ihrer Farbe','man kann sie direkt sehen','an ihrem Geruch']],
+ ['Was passiert, wenn eine Kraft wirkt?','Der Bewegungszustand oder die Form eines Körpers ändert sich.',['Der Körper wird immer schwerer.','Gar nichts.','Der Körper wird immer wärmer.']],
+ ['Wie nennt man eine Verformung durch eine Kraft?','statische Kraftwirkung',['dynamische Kraftwirkung','Wechselwirkung','Gleichgewicht']],
+ ['Wie nennt man die Änderung des Bewegungszustands durch eine Kraft?','dynamische Kraftwirkung',['statische Kraftwirkung','plastische Verformung','elastische Verformung']],
+ ['Was bedeutet „plastisch verformt“?','dauerhaft verformt',['nur kurz verformt','gar nicht verformt','aus Plastik']],
+ ['Was bedeutet „elastisch verformt“?','vorübergehend verformt, danach wieder in der alten Form',['dauerhaft verformt','zerbrochen','geschmolzen']],
+ ['Wie stellt man Kräfte dar?','durch Pfeile (Vektorpfeile)',['durch Kreise','durch Zahlen ohne Richtung','durch Punkte']],
+ ['Welche drei Bestimmungsstücke legen eine Kraft fest?','Betrag, Richtung, Angriffspunkt',['Farbe, Länge, Breite','Masse, Volumen, Dichte','Weg, Zeit, Geschwindigkeit']],
+ ['Was gibt die Länge des Kraftpfeils an?','den Betrag (die Größe) der Kraft',['die Richtung der Kraft','den Angriffspunkt','die Zeit']],
+ ['Wo beginnt der Kraftpfeil?','im Angriffspunkt',['an der Pfeilspitze','irgendwo auf dem Blatt','im Mittelpunkt der Erde']],
+ ['Wofür steht das F beim Kraftpfeil?','Force (Kraft)',['Fläche','Frequenz','Fallen']],
+ ['Wann haben zwei Kräfte dieselbe Wirkung?','wenn Betrag, Richtung und Angriffspunkt übereinstimmen',['wenn nur der Betrag gleich ist','wenn nur die Richtung gleich ist','wenn sie verschiedene Angriffspunkte haben']]];
+const KRAFT_A=KRAFT_MC.slice(0,6),KRAFT_B=KRAFT_MC.slice(6);
+const WW_MC=[
+ ['Gibt es in der Natur einzelne Kräfte ohne Partner?','Nein, zu jeder Kraft gibt es eine Gegenkraft.',['Ja, die meisten Kräfte sind einzeln.','Nur bei Magneten.','Nur im Weltall.']],
+ ['Kraft und Gegenkraft (Wechselwirkung) …','haben den gleichen Betrag, dieselbe Wirkungslinie und entgegengesetzte Richtungen.',['sind verschieden groß.','zeigen in dieselbe Richtung.','haben verschiedene Wirkungslinien.']],
+ ['Auf welche Körper wirken Kraft und Gegenkraft beim Wechselwirkungsprinzip?','auf zwei verschiedene Körper',['auf denselben Körper','auf gar keinen Körper','immer auf die Erde']],
+ ['Zwei Kräfte im Gleichgewicht greifen an …','einem Körper an',['zwei verschiedenen Körpern an','gar keinem Körper an','der Erde an']],
+ ['Was gilt für zwei Kräfte im Gleichgewicht?','gleicher Betrag, gleiche Wirkungslinie, entgegengesetzte Richtung, an einem Körper',['verschiedener Betrag, gleiche Richtung','gleicher Betrag, gleiche Richtung','an zwei verschiedenen Körpern']],
+ ['Wann befindet sich ein Körper in Ruhe?','wenn keine Kraft wirkt oder die wirkenden Kräfte im Gleichgewicht sind',['nur wenn gar keine Kraft wirkt','wenn eine große Kraft wirkt','wenn er sehr schwer ist']],
+ ['Woran erkennt man ein Kräftegleichgewicht?','Es ist keine Kraftwirkung erkennbar: keine Verformung, keine Änderung des Bewegungszustands.',['Der Körper wird schneller.','Der Körper verformt sich.','Der Körper ändert die Richtung.']],
+ ['Zwei gleich lange Kraftpfeile zeigen in dieselbe Richtung, an zwei verschiedenen Körpern. Was gilt?','Die Kräfte sind gleich.',['Die Kräfte sind im Gleichgewicht.','Es ist eine Wechselwirkung.','Die Kräfte heben sich auf.']]];
+const WW_S=[['Eine Lampe hängt ruhig an der Decke: Gewichtskraft nach unten, Zugkraft des Kabels nach oben.','Kräftegleichgewicht'],['Ein Buch liegt still auf dem Tisch.','Kräftegleichgewicht'],['Beim Tauziehen bewegt sich das Seil nicht.','Kräftegleichgewicht'],['Ein Bild hängt ruhig an einem Nagel.','Kräftegleichgewicht'],
+ ['Du drückst gegen die Wand, die Wand drückt gegen deine Hand zurück.','Wechselwirkung'],['Eine Rakete stößt Gase nach unten aus, die Gase drücken die Rakete nach oben.','Wechselwirkung'],['Ein Schwimmer stößt sich vom Beckenrand ab und gleitet weg.','Wechselwirkung'],['Zwei Magnete ziehen sich gegenseitig an.','Wechselwirkung'],['Du springst aus einem kleinen Boot ans Ufer, das Boot fährt zurück.','Wechselwirkung']];
+Object.assign(GEN,{
+ kraft(l){
+  if(l===1){
+   if(Math.random()<.65){const [s,a]=fresh(KW);return {kind:'mc',q:`„${s}“ Welche Kraftwirkung ist das?`,opts:[a,...KW_O.filter(x=>x!==a)],
+    tip:'Statisch = Verformung (plastisch: bleibt, elastisch: geht zurück). Dynamisch = Bewegungszustand ändert sich (schneller/langsamer oder Richtung).',
+    erk:`Richtig: <b>${a}</b>. ${a.startsWith('Verformung')?'Das ist eine statische Kraftwirkung.':'Das ist eine dynamische Kraftwirkung.'}`};}
+   const [q,ok,w]=fresh(KRAFT_A);return {kind:'mc',q,opts:[ok,...w],tip:'Schau im Heft unter „Kraftwirkungen“.',erk:`Richtig: <b>${esc(ok)}</b>.`};
+  }
+  if(l===2){
+   if(Math.random()<.6){const [s,a]=fresh(KA);return {kind:'mc',q:`„${s}“ Welche Kraft wirkt hier vor allem?`,opts:[a,...shuffle(KA_O.filter(x=>x!==a)).slice(0,3)],
+    tip:'Arten von Kräften: magnetisch, elektrisch, Gewichtskraft, Reibung, Auftrieb, Schub, Zug, Druck.',erk:`Richtig: <b>${a}</b>.`};}
+   const [q,ok,w]=fresh(KRAFT_B);return {kind:'mc',q,opts:[ok,...w],tip:'Betrag = Länge des Pfeils, Richtung = wohin der Pfeil zeigt, Angriffspunkt = wo der Pfeil beginnt.',erk:`Richtig: <b>${esc(ok)}</b>.`};
+  }
+  if(Math.random()<.5){const [s,a]=fresh(WW_S);return {kind:'mc',q:`„${s}“ Ist das eine Wechselwirkung (Kraft und Gegenkraft) oder ein Kräftegleichgewicht?`,opts:[a,a==='Wechselwirkung'?'Kräftegleichgewicht':'Wechselwirkung'],
+   tip:'Wechselwirkung: zwei Körper, jeder übt eine Kraft auf den anderen aus. Gleichgewicht: zwei Kräfte an EINEM Körper, nichts verändert sich.',
+   erk:a==='Wechselwirkung'?'<b>Wechselwirkung</b>: Die beiden Kräfte wirken auf zwei verschiedene Körper.':'<b>Kräftegleichgewicht</b>: Zwei gleich große, entgegengesetzte Kräfte wirken an einem Körper, er bleibt in Ruhe.'};}
+  const [q,ok,w]=fresh(WW_MC);return {kind:'mc',q,opts:[ok,...w],tip:'Wechselwirkung: zwei Körper. Gleichgewicht: ein Körper.',erk:`Richtig: <b>${esc(ok)}</b>.`};
+ }
+});
+/* ---------- Leonie Geschichte: Französische Revolution ---------- */
+const REVO={
+ 1:[['Wie hieß der französische König, der 1793 hingerichtet wurde?','Ludwig XVI.',['Ludwig XIV.','Napoleon','Karl der Große']],
+  ['Was wurde in Frankreich 1792 abgeschafft?','die Monarchie',['die Kirche','die Nationalversammlung','die Menschenrechte']],
+  ['Welche Staatsform hatte Frankreich ab 1792?','Republik',['absolute Monarchie','konstitutionelle Monarchie','Kaiserreich']],
+  ['Unter welchem Namen wurde Ludwig XVI. als Bürger angeklagt?','Louis Capet',['Louis Bourbon','Bürger Ludwig','Louis de Sèze']],
+  ['Womit wurden die Todesurteile in der Revolution vollstreckt?','mit der Guillotine',['mit dem Galgen','mit dem Schwert','mit Gewehren']],
+  ['Wer führte die Schreckensherrschaft an?','Maximilien de Robespierre',['Ludwig XVI.','Romain de Sèze','Napoleon Bonaparte']],
+  ['Wann war die Zeit der Schreckensherrschaft?','1793–1794',['1789–1790','1799–1804','1815–1830']],
+  ['Wer waren die Jakobiner?','ein radikaler politischer Club der Revolution',['die Leibwache des Königs','ein Orden von Mönchen','ausländische Soldaten']],
+  ['Mit welchem Ergebnis stimmte der Nationalkonvent über das Todesurteil ab?','387 zu 334 Stimmen',['500 zu 221 Stimmen','334 zu 387 Stimmen','einstimmig']],
+  ['Wann fällten die Abgeordneten das Urteil über Ludwig XVI.?','am 17. Januar 1793',['am 14. Juli 1789','am 4. August 1789','am 9. November 1799']],
+  ['Wo wurde über das Schicksal des Königs verhandelt?','im Nationalkonvent',['beim Papst','in Versailles vor dem Hofstaat','vor einem Gericht in Österreich']],
+  ['Wer war Romain de Sèze?','einer der Anwälte des Königs',['ein Jakobiner','der Henker von Paris','der Bruder des Königs']]],
+ 2:[['Warum wurde Frankreich Republik?','Der König versuchte, mithilfe des Auslands die Revolution zu beenden.',['Der König wollte freiwillig abdanken.','Österreich verlangte eine Republik.','Die Kirche forderte es.']],
+  ['Wovor hatten die europäischen Monarchien Angst?','dass sich die Revolution auch in ihren Ländern ausbreitet',['dass Frankreich zu arm wird','dass der König zu mächtig wird','dass Paris zerstört wird']],
+  ['Was folgte aus dem Misstrauen gegenüber dem König?','Gefangennahme der königlichen Familie und Abschaffung der Monarchie',['der König wurde zum Kaiser gekrönt','der König bekam mehr Macht','die Revolution wurde beendet']],
+  ['Welche Gefahr bedrohte die junge Republik?','ein Bürgerkrieg durch ausgeweitete Aufstände',['ein Erdbeben in Paris','zu viele Lebensmittel','die Rückkehr der Pest']],
+  ['Was machte den König bei vielen Franzosen verdächtig?','sein Fluchtversuch aus Frankreich',['seine Krönung zum Kaiser','sein Besuch beim Papst','seine Reise nach Amerika']],
+  ['Was war das Revolutionstribunal?','ein Gericht zur Bestrafung von Revolutionsgegnern unter Führung der Jakobiner',['ein Parlament des Königs','eine Schule für Revolutionäre','ein Krankenhaus in Paris']],
+  ['Was bedeutet „Gewalt als Mittel der Politik“ in der Schreckensherrschaft?','Gegner der Revolution wurden verfolgt und hingerichtet.',['Es gab freie Wahlen.','Der König bestimmte alles allein.','Streit wurde vor Gericht friedlich gelöst.']],
+  ['Wegen welchem Vorwurf wurden Ludwig XVI. und seine Frau angeklagt?','Landesverrat (Hochverrat)',['Diebstahl','Steuerbetrug','Mord']],
+  ['Welche Stellung gab die Verfassung von 1791 dem König?','Er stand an der Spitze der ausführenden Gewalt.',['Er hatte gar keine Macht mehr.','Er war gleichzeitig Richter und Gesetzgeber.','Er war Papst.']],
+  ['Was entdeckte man kurz nach dem Eid des Königs auf die Verfassung?','Schriften, nach denen er mithilfe ausländischer Kontakte die Revolutionäre stürzen wollte',['dass er heimlich abgedankt hatte','einen Schatz in Versailles','Briefe an den Papst über Steuern']],
+  ['Welche Folge hatte die Revolution für Europa?','Sie wurde Vorbild für die staatliche Weiterentwicklung anderer Länder.',['Alle Länder wurden sofort Republiken.','Europa wurde von Frankreich regiert.','Sie hatte keine Folgen.']],
+  ['Welche Idee der Revolution übernahmen andere Länder?','die Menschenrechte',['die Schreckensherrschaft','die Guillotine als Staatssymbol','die Abschaffung aller Gesetze']],
+  ['Was bedeutet „weiter anhaltende Versorgungskrise“?','Viele Menschen hatten nicht genug zu essen.',['Es gab zu viel Brot.','Die Post kam nicht an.','Die Armee hatte zu viele Soldaten.']],
+  ['Wie viele Abgeordnete enthielten sich bei der Abstimmung über Louis Capet?','fünf',['keiner','zwanzig','hundert']]],
+ 3:[['Wer sagte: „Ludwig muss sterben, weil das Vaterland leben soll.“?','Robespierre',['de Sèze','Ludwig XVI.','Marie Antoinette']],
+  ['Wer fragte: „Wo bleibt das geregelte Verfahren? Wo sind die Geschworenen?“','de Sèze',['Robespierre','ein Jakobiner','Ludwig XVI.']],
+  ['Wer warf dem Konvent vor: „Ihr wollt Ludwig richten und habt ihn doch selbst angeklagt!“?','de Sèze',['Robespierre','der Henker','das Volk']],
+  ['Wie argumentierte Robespierre?','Ein entthronter König bleibt gefährlich für die Revolution, deshalb muss er sterben.',['Ludwig braucht einen fairen Prozess mit Geschworenen.','Ludwig ist unschuldig.','Man soll Ludwig zum König zurückmachen.']],
+  ['Wie argumentierte de Sèze?','Wenn Ludwig wie ein Bürger behandelt wird, braucht er auch ein geregeltes Verfahren.',['Ludwig muss sterben, weil das Vaterland leben soll.','Ludwig ist ein Rebell.','Das Volk hat schon entschieden.']],
+  ['Für was setzte sich Robespierre ein?','für die Hinrichtung des Königs',['für die Freilassung des Königs','für eine geheime Abstimmung','für einen Prozess mit Geschworenen']],
+  ['Für was setzte sich de Sèze ein?','für ein faires, geregeltes Verfahren für den König',['für die sofortige Hinrichtung','für die Abschaffung der Republik','für die Schreckensherrschaft']],
+  ['Wen meint Robespierre mit den „Tyrannen“?','die europäischen Monarchen und ihre Anhänger',['die Jakobiner','die Bauern','die Abgeordneten des Konvents']],
+  ['Was meint Robespierre mit „Mit seinem Sieg hat das Volk aber gezeigt, dass er, Ludwig, der Rebell ist“?','Das Volk hat Ludwig durch die Revolution schon schuldig gesprochen.',['Ludwig hat die Revolution gewonnen.','Ludwig war ein Anführer der Revolution.','Das Volk will Ludwig zurück.']],
+  ['Was kritisiert de Sèze am Prozess?','Die Ankläger sind gleichzeitig die Richter.',['Der Prozess dauert zu lang.','Es gibt zu viele Geschworene.','Der König darf zu viel sagen.']],
+  ['Welche Vermutung erklärt, warum das Todesurteil so knapp ausfiel?','Viele Abgeordnete hatten Bedenken, ob ein Todesurteil rechtens ist und welche Folgen es hat.',['Viele Abgeordnete waren an dem Tag krank.','Die Abstimmung wurde ausgelost.','Alle Abgeordneten waren Jakobiner.']],
+  ['Welches Recht hatte Ludwig laut de Sèze als König?','unverletzlich zu sein',['alle Gesetze allein zu machen','Steuern selbst festzulegen','Abgeordnete zu verhaften']],
+  ['Was bedeutet „Abstimmung 387 zu 334“ für das Urteil?','Eine knappe Mehrheit stimmte für den Tod.',['Eine große Mehrheit stimmte dagegen.','Es gab einen Gleichstand.','Fast alle waren für den Tod.']]]};
+Object.assign(GEN,{
+ revo(l){const [q,ok,w]=fresh(REVO[l]);
+  return {kind:'mc',q,opts:[ok,...w],tip:'Schau im Heft unter „Die Revolution verändert Frankreich“ und „Die Verurteilung Ludwigs XVI.“ nach.',erk:`Richtig: <b>${esc(ok)}</b>.`}}
+});
+UEB.marvin.unshift({id:'u-zehner',gen:'zehner',fach:'Mathe',titel:'Malnehmen mit Zehnerzahlen',kurz:'Multi-Schiffe: 8 · 60, fehlende Zahlen, Zahl im Segel',grp:'akt',check:null});
+UEB.leonie.unshift(
+ {id:'u-geschw',gen:'geschw',fach:'Physik',titel:'Geschwindigkeit v = s : t',kurz:'m/s ↔ km/h, Textaufgaben mit Gegeben/Gesucht',grp:'akt',check:null},
+ {id:'u-einheit',gen:'einheit',fach:'Physik',titel:'Länge, Zeit, Einheiten',kurz:'Umrechnen, Zehnerpotenzen, sinnvolle Ziffern, Messfehler',grp:'akt',check:null},
+ {id:'u-kraft',gen:'kraft',fach:'Physik',titel:'Kraft',kurz:'Kraftwirkungen, Kraftarten, Wechselwirkung, Gleichgewicht',grp:'akt',check:null},
+ {id:'u-revo',gen:'revo',fach:'Geschichte',titel:'Französische Revolution',kurz:'Republik, Jakobiner, Robespierre, Urteil über Ludwig XVI.',grp:'akt',check:null});
+GRP.akt='Neu aus der Schule';
+GRP.sa='Englisch Unit 1 wiederholen';
 /* ---------- Versand an Google-Tabelle ---------- */
 const SYNC_KEY='lernstand-sync-v1';
 function syncCfg(){try{return JSON.parse(localStorage.getItem(SYNC_KEY))||{}}catch(e){return {}}}
