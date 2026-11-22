@@ -78,6 +78,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
 .dots i{width:14px;height:14px;border-radius:50%;background:var(--line)}
 .dots i.ok{background:var(--good)} .dots i.no{background:var(--bad)} .dots i.now{background:var(--accent)}
 .q{font-size:1.35rem;font-weight:700;line-height:1.4}
+.qimg{margin:10px 0 4px;text-align:center}.qimg svg{display:inline-block;max-width:100%;height:auto;background:#fff;border-radius:10px;padding:4px}
 .q .calc{font-family:var(--f-display);font-size:2.2rem;display:block;margin-top:6px;font-variant-numeric:tabular-nums}
 .opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
 .opt{min-height:64px;padding:12px 16px;border-radius:14px;border:2px solid var(--line);background:var(--paper);text-align:left;font-size:1.1rem;display:flex;align-items:center;justify-content:center;gap:8px}
@@ -824,7 +825,7 @@ function uebenView(app){
    <div class="actions"><span class="lvl" aria-label="Stufe ${st.lvl} von 3">Stufe ${st.lvl}<span class="lvlbar">${[1,2,3].map(i=>`<i class="${i<=st.lvl?'on':''}"></i>`).join('')}</span></span><span class="starcount">★ ${S.stars}</span><button class="btn ghost small" id="pause">Pause</button></div></div>
    <div class="quiz pop">
     ${f.passage?`<div class="passage">${f.passage}</div>`:''}
-    <div class="q">${esc(f.q)}${f.calc?`<span class="calc${f.kind==='text'?' sent':''}">${esc(f.calc)}</span>`:''}</div>
+    <div class="q">${esc(f.q)}${f.calc?`<span class="calc${f.kind==='text'?' sent':''}">${esc(f.calc)}</span>`:''}</div>${f.img?`<div class="qimg">${f.img}</div>`:''}
     ${body}<div id="tipbox"></div><div id="fb"></div>
     <div class="actions" id="acts"><button class="btn" id="check" disabled>Prüfen</button><button class="btn ghost" id="tip">Tipp</button><button class="link" id="skip">Weiß ich noch nicht</button></div>
    </div>`;
@@ -859,7 +860,7 @@ function uebenView(app){
   else{st.down++;st.up=0;
    if(st.down>=2&&st.lvl>1){st.lvl--;st.down=0;lvMsg=`<p>Wir gehen kurz auf Stufe ${st.lvl} zurück und üben dort weiter.</p>`}
    DB.fehler=DB.fehler||{};const L=DB.fehler[S.kid]=DB.fehler[S.kid]||[];
-   L.unshift({tid:S.tid,lvl:old,q:f.q+(f.calc?' '+f.calc:''),given,date:Date.now()});S.errs.push('Stufe '+old+': '+f.q+(f.calc?' '+f.calc:'')+' | Antwort: '+given);L.length=Math.min(L.length,40);
+   L.unshift({tid:S.tid,lvl:old,q:f.q+(f.calc?' '+f.calc:'')+(f.ilog?' ['+f.ilog+']':''),given,date:Date.now()});S.errs.push('Stufe '+old+': '+f.q+(f.calc?' '+f.calc:'')+(f.ilog?' ['+f.ilog+']':'')+' | Antwort: '+given);L.length=Math.min(L.length,40);
   }
   save(DB);
   if(f.kind==='mc')app.querySelectorAll('.opt').forEach(b=>{b.disabled=true;const i=+b.dataset.i;if(i===0)b.classList.add('right');else if(i===sel)b.classList.add('wrong')});
@@ -1601,6 +1602,326 @@ Object.assign(GEN,{
 });
 UEB.leonie.unshift({id:'u-gleichs',gen:'gleichS',fach:'Mathe',titel:'Gleichungen Schritt für Schritt',kurz:'Erst ein Schritt, dann ganze Gleichungen, mit Klammern',grp:'akt',check:null});
 (UEB.leonie.find(t=>t.id==='u-gleich')||{}).grp='akt';
+/* ================= Themen der Woche ab 23.11. ================= */
+/* ---------- Grafik-Helfer ---------- */
+const svgW=(vb,inner,w=150,label='')=>`<svg viewBox="${vb}" width="${w}" height="${w}" role="img" aria-label="${label}" style="max-width:100%;height:auto">${inner}</svg>`;
+const BLUE='#1d5fb4',RED='#d32029';
+const icBike=(x,y,s,c='#fff')=>`<g transform="translate(${x} ${y}) scale(${s})" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="-11" cy="5" r="8"/><circle cx="11" cy="5" r="8"/><path d="M-11 5 L-3 -7 L8 -7 L11 5 M-3 -7 L1 5 L8 -7 M-5 -11 L-1 -11 M8 -7 L6 -12 L10 -12"/></g>`;
+const icWalk=(x,y,s,c='#fff')=>`<g transform="translate(${x} ${y}) scale(${s})" fill="${c}" stroke="${c}" stroke-width="3.2" stroke-linecap="round"><circle cx="0" cy="-15" r="4" stroke="none"/><path d="M0 -10 L0 4 M0 4 L-5 15 M0 4 L5 15 M0 -6 L-6 1 M0 -6 L6 1" fill="none"/></g>`;
+const icKind=(x,y,s,c='#fff')=>icWalk(x,y,s*0.7,c);
+const arrowUp=(x,y,h,c='#fff',w=9)=>`<path d="M${x} ${y+h/2} L${x} ${y-h/2+10}" stroke="${c}" stroke-width="${w}" fill="none"/><path d="M${x-13} ${y-h/2+14} L${x} ${y-h/2} L${x+13} ${y-h/2+14} Z" fill="${c}"/>`;
+const SIGN={
+ radweg:svgW('0 0 100 100',`<circle cx="50" cy="50" r="46" fill="${BLUE}" stroke="#fff" stroke-width="3"/>${icBike(50,48,1.5)}`,150,'Schild'),
+ gemeinsam:svgW('0 0 100 100',`<circle cx="50" cy="50" r="46" fill="${BLUE}" stroke="#fff" stroke-width="3"/>${icWalk(42,34,0.8)}${icKind(58,38,0.8)}<line x1="12" y1="52" x2="88" y2="52" stroke="#fff" stroke-width="3"/>${icBike(50,72,0.95)}`,150,'Schild'),
+ getrennt:svgW('0 0 100 100',`<circle cx="50" cy="50" r="46" fill="${BLUE}" stroke="#fff" stroke-width="3"/><line x1="50" y1="6" x2="50" y2="94" stroke="#fff" stroke-width="3"/>${icBike(29,52,0.8)}${icWalk(66,52,0.85)}${icKind(78,56,0.7)}`,150,'Schild'),
+ zebra:svgW('0 0 100 100',`<rect x="4" y="4" width="92" height="92" rx="6" fill="${BLUE}" stroke="#fff" stroke-width="3"/><path d="M50 14 L88 84 L12 84 Z" fill="#fff"/><g fill="#111"><rect x="26" y="74" width="6" height="8"/><rect x="38" y="74" width="6" height="8"/><rect x="50" y="74" width="6" height="8"/><rect x="62" y="74" width="6" height="8"/></g>${icWalk(50,56,0.95,'#111')}`,150,'Schild'),
+ rechts:svgW('0 0 100 100',`<circle cx="50" cy="50" r="46" fill="${BLUE}" stroke="#fff" stroke-width="3"/><path d="M40 82 L40 50 Q40 36 54 36 L62 36" stroke="#fff" stroke-width="9" fill="none"/><path d="M60 22 L78 36 L60 50 Z" fill="#fff"/>`,150,'Schild'),
+ gerade:svgW('0 0 100 100',`<circle cx="50" cy="50" r="46" fill="${BLUE}" stroke="#fff" stroke-width="3"/>${arrowUp(50,52,64)}`,150,'Schild'),
+ einbahn:svgW('0 0 120 60',`<rect x="2" y="2" width="116" height="56" rx="5" fill="${BLUE}" stroke="#fff" stroke-width="3"/><path d="M12 22 L88 22 L88 12 L110 30 L88 48 L88 38 L12 38 Z" fill="#fff"/><text x="50" y="34" font-size="11" font-family="Arial,sans-serif" font-weight="700" text-anchor="middle" fill="#111">Einbahnstraße</text>`,190,'Schild'),
+ gegen:svgW('0 0 100 100',`<circle cx="50" cy="50" r="46" fill="#fff" stroke="${RED}" stroke-width="9"/><path d="M38 26 L38 66" stroke="#111" stroke-width="7"/><path d="M28 62 L38 78 L48 62 Z" fill="#111"/><path d="M62 74 L62 34" stroke="${RED}" stroke-width="7"/><path d="M52 38 L62 22 L72 38 Z" fill="${RED}"/>`,150,'Schild'),
+ vorrang:svgW('0 0 100 100',`<rect x="4" y="4" width="92" height="92" rx="6" fill="${BLUE}" stroke="#fff" stroke-width="3"/><path d="M38 26 L38 64" stroke="${RED}" stroke-width="6"/><path d="M29 60 L38 76 L47 60 Z" fill="${RED}"/><path d="M62 78 L62 36" stroke="#fff" stroke-width="9"/><path d="M49 40 L62 20 L75 40 Z" fill="#fff"/>`,150,'Schild'),
+ verbot:svgW('0 0 100 100',`<circle cx="50" cy="50" r="46" fill="${RED}" stroke="#fff" stroke-width="3"/><rect x="18" y="42" width="64" height="16" fill="#fff"/>`,150,'Schild'),
+ baustelle:svgW('0 0 100 92',`<path d="M50 6 L95 86 L5 86 Z" fill="#fff" stroke="${RED}" stroke-width="8" stroke-linejoin="round"/><g fill="#111" stroke="#111" stroke-linecap="round"><circle cx="44" cy="40" r="5"/><path d="M44 46 L50 62 L44 76 M50 62 L58 76 M46 50 L58 56 L66 46" stroke-width="5" fill="none"/><path d="M64 70 L74 70 L70 76 L60 76 Z"/><path d="M66 46 L70 72" stroke-width="3" fill="none"/></g>`,150,'Schild'),
+ verengt:svgW('0 0 100 92',`<path d="M50 6 L95 86 L5 86 Z" fill="#fff" stroke="${RED}" stroke-width="8" stroke-linejoin="round"/><path d="M38 76 L38 34 M60 76 L60 62 L52 50 L52 34" stroke="#111" stroke-width="5" fill="none"/>`,150,'Schild'),
+ vorfahrtgew:svgW('0 0 100 92',`<path d="M50 86 L95 6 L5 6 Z" fill="#fff" stroke="${RED}" stroke-width="9" stroke-linejoin="round"/>`,150,'Schild'),
+ stop:svgW('0 0 100 100',`<path d="M30 4 L70 4 L96 30 L96 70 L70 96 L30 96 L4 70 L4 30 Z" fill="${RED}" stroke="#fff" stroke-width="3"/><text x="50" y="60" font-size="26" font-family="Arial,sans-serif" font-weight="700" text-anchor="middle" fill="#fff">STOP</text>`,150,'Schild'),
+ vorfahrtstr:svgW('0 0 100 100',`<path d="M50 4 L96 50 L50 96 L4 50 Z" fill="#fff" stroke="#999" stroke-width="2"/><path d="M50 18 L82 50 L50 82 L18 50 Z" fill="#f6c700"/>`,150,'Schild'),
+ vorfahrtnaechste:svgW('0 0 100 92',`<path d="M50 6 L95 86 L5 86 Z" fill="#fff" stroke="${RED}" stroke-width="8" stroke-linejoin="round"/><path d="M50 30 L50 78" stroke="#111" stroke-width="8"/><path d="M32 58 L68 58" stroke="#111" stroke-width="3"/>`,150,'Schild'),
+ alleverbot:svgW('0 0 100 100',`<circle cx="50" cy="50" r="46" fill="#fff" stroke="${RED}" stroke-width="9"/>`,150,'Schild'),
+ radverbot:svgW('0 0 100 100',`<circle cx="50" cy="50" r="46" fill="#fff" stroke="${RED}" stroke-width="9"/>${icBike(50,50,1.3,'#111')}`,150,'Schild'),
+ gehweg:svgW('0 0 100 100',`<circle cx="50" cy="50" r="46" fill="${BLUE}" stroke="#fff" stroke-width="3"/>${icWalk(42,54,1.25)}${icKind(62,60,1.1)}`,150,'Schild')};
+const SCHILDER=[
+ ['radweg','Radweg',['Fahrradfahrerweg','Fahrradstraße','Gehweg'],'Ich muss den Radweg benutzen.',['Ich darf hier nicht Rad fahren.','Hier dürfen nur Autos fahren.','Ich muss absteigen und schieben.']],
+ ['gemeinsam','Gemeinsamer Fuß- und Radweg',['Getrennter Rad- und Fußweg','Spielstraße','Gehweg'],'Ich achte besonders auf Fußgänger.',['Fußgänger müssen mir ausweichen.','Ich muss links fahren.','Hier dürfen keine Fußgänger gehen.']],
+ ['getrennt','Getrennter Rad- und Fußweg',['Gemeinsamer Fuß- und Radweg','Radweg','Fußgängerüberweg'],'Ich fahre auf der Seite mit dem Fahrrad (hier links).',['Ich fahre auf der Seite mit den Fußgängern.','Ich darf fahren, wo ich will.','Ich muss rechts fahren.']],
+ ['zebra','Fußgängerüberweg (Zebrastreifen)',['Achtung, Radfahrer queren','Gehweg','Spielplatz'],'Fußgänger haben Vorrang.',['Radfahrer haben Vorrang.','Fußgänger müssen warten.','Hier ist Parken erlaubt.']],
+ ['rechts','Vorgeschriebene Fahrtrichtung rechts',['Rechts fahren','Kurve nach rechts','Einbahnstraße'],'Ich muss rechts abbiegen.',['Ich darf auch geradeaus fahren.','Ich darf rechts abbiegen, muss aber nicht.','Ich muss links abbiegen.']],
+ ['gerade','Vorgeschriebene Fahrtrichtung geradeaus',['Nach oben fahren','Einbahnstraße','Vorfahrtstraße'],'Ich muss geradeaus fahren.',['Ich darf auch links abbiegen.','Ich darf auch rechts abbiegen.','Ich muss bergauf fahren.']],
+ ['einbahn','Einbahnstraße',['Verbot der Einfahrt','Vorgeschriebene Fahrtrichtung rechts','Sackgasse'],'Die Straße ist nur in Richtung des Pfeils freigegeben.',['Ich darf in beide Richtungen fahren.','Dieses Schild gilt nicht für Radfahrer.','Hier ist die Einfahrt verboten.']],
+ ['gegen','Vorrang des Gegenverkehrs',['Vorrang vor dem Gegenverkehr','Vorfahrt gewähren','Einbahnstraße'],'Wer mir entgegenkommt, darf zuerst fahren.',['Ich habe Vorrang vor dem Gegenverkehr.','Ich darf überholen.','Die Straße ist gesperrt.']],
+ ['vorrang','Vorrang vor dem Gegenverkehr',['Vorrang des Gegenverkehrs','Vorfahrtstraße','Einbahnstraße'],'Ich darf vor dem Gegenverkehr fahren.',['Der Gegenverkehr darf zuerst fahren.','Ich muss anhalten.','Hier darf ich nicht fahren.']],
+ ['verbot','Verbot der Einfahrt',['Straßensperrung','Halteverbot','Stoppschild'],'Das Einfahren in diese Straße ist verboten.',['Das Einfahren in diese Straße ist erlaubt.','Ich muss kurz anhalten und dann fahren.','Nur Radfahrer dürfen einfahren.']],
+ ['baustelle','Baustelle',['Achtung Kinderspielplatz','Fußgänger überqueren die Straße','Steinschlag'],'Auf meiner Straßenseite sind Bauarbeiten.',['Hier spielen Kinder.','Fußgänger überqueren die Straße.','Ich habe Vorfahrt.']],
+ ['verengt','Einseitig (rechts) verengte Fahrbahn',['Einseitig (links) verengte Fahrbahn','Kurve','Baustelle'],'Meine Fahrbahn wird rechts schmaler.',['Ich habe Vorrang.','Die Straße endet.','Die Fahrbahn wird breiter.']],
+ ['vorfahrtgew','Vorfahrt gewähren',['Vorfahrtstraße','Stoppschild','Achtung Gefahr'],'Ich muss andere vorlassen, notfalls anhalten.',['Ich habe Vorfahrt.','Ich muss immer anhalten, auch wenn niemand kommt.','Ich darf nicht weiterfahren.']],
+ ['stop','Halt! Vorfahrt gewähren (Stoppschild)',['Vorfahrt gewähren','Verbot der Einfahrt','Ende der Straße'],'Ich muss anhalten und andere vorlassen.',['Ich darf langsam weiterrollen.','Ich habe Vorfahrt.','Ich muss nur anhalten, wenn ein Auto kommt.']],
+ ['vorfahrtstr','Vorfahrtstraße',['Vorfahrt gewähren','Vorfahrt an der nächsten Kreuzung','Baustelle'],'Ich habe an den nächsten Kreuzungen Vorfahrt.',['Ich muss an jeder Kreuzung anhalten.','Hier gilt rechts vor links.','Ich muss Vorfahrt gewähren.']],
+ ['vorfahrtnaechste','Vorfahrt an der nächsten Kreuzung',['Vorfahrtstraße','Kreuzung mit rechts vor links','Vorfahrt gewähren'],'Ich habe nur an der nächsten Kreuzung Vorfahrt.',['Ich habe an allen Kreuzungen Vorfahrt.','Ich muss an der nächsten Kreuzung warten.','Hier ist eine Baustelle.']],
+ ['alleverbot','Verbot für Fahrzeuge aller Art',['Verbot der Einfahrt','Halteverbot','Kreisverkehr'],'Hier darf kein Fahrzeug fahren, auch kein Fahrrad.',['Nur Fahrräder dürfen hier fahren.','Hier darf ich parken.','Ich habe Vorfahrt.']],
+ ['radverbot','Verbot für Radfahrer',['Radweg','Fahrradstraße','Fahrradparkplatz'],'Hier darf ich nicht Rad fahren, ich muss schieben.',['Ich muss den Radweg benutzen.','Nur Radfahrer dürfen hier fahren.','Hier darf ich Rad fahren.']],
+ ['gehweg','Gehweg',['Gemeinsamer Fuß- und Radweg','Fußgängerüberweg','Spielstraße'],'Dieser Weg ist für Fußgänger.',['Dieser Weg ist für Radfahrer.','Hier müssen alle Rad fahren.','Fußgänger dürfen hier nicht gehen.']]];
+const RADWISSEN=[
+ ['Wer hat am Zebrastreifen Vorrang?','die Fußgänger',['die Radfahrer','die Autos','wer schneller ist']],
+ ['Ein Fußgänger streckt am Zebrastreifen die Hand nach vorne. Was will er zeigen?','dass er über die Straße gehen möchte',['dass er ein Taxi will','dass ich schneller fahren soll','dass er winkt']],
+ ['Wie verhältst du dich als Radfahrer vor einem Zebrastreifen?','langsam heranfahren und Fußgänger zuerst gehen lassen',['schnell drüberfahren','klingeln, damit Fußgänger warten','auf dem Zebrastreifen anhalten']],
+ ['Wann gehst du zu Fuß über den Zebrastreifen?','wenn kein Auto kommt oder das Auto anhält bzw. der Fahrer dir ein Zeichen gibt',['sofort, ohne zu schauen','nur, wenn ein Auto kommt','nur bei Rot']],
+ ['Wo gilt „rechts vor links“?','an Kreuzungen und Einmündungen ohne Vorfahrtsschilder, Ampeln oder Polizei',['überall, auch an Ampeln','nur auf Autobahnen','nur bei Vorfahrtsschildern']],
+ ['An einer Kreuzung ohne Schilder kommt von rechts ein Auto. Was machst du?','Ich bleibe stehen und lasse es zuerst fahren.',['Ich fahre schnell vor dem Auto.','Ich klingle und fahre.','Ich fahre, weil ich ein Fahrrad habe.']],
+ ['Auf welcher Straßenseite fährst du mit dem Fahrrad?','auf der rechten Seite',['auf der linken Seite','in der Mitte','egal']],
+ ['Was machst du, bevor du links abbiegst?','Schulterblick nach hinten, Handzeichen links, einordnen',['einfach abbiegen','nur klingeln','Handzeichen rechts geben']],
+ ['Wie zeigst du an, dass du rechts abbiegen willst?','rechten Arm ausstrecken',['linken Arm ausstrecken','klingeln','beide Arme hochheben']],
+ ['Welche Farbe hat das Licht vorne am Fahrrad?','weiß',['rot','gelb','blau']],
+ ['Welche Farbe hat das Rücklicht?','rot',['weiß','gelb','grün']],
+ ['Welche Farbe haben die Rückstrahler an den Pedalen?','gelb',['rot','blau','weiß']],
+ ['Wie viele Bremsen braucht ein verkehrssicheres Fahrrad?','zwei, die unabhängig voneinander funktionieren',['eine','keine, man bremst mit den Füßen','drei']],
+ ['Was gehört NICHT zur vorgeschriebenen Ausrüstung eines Fahrrads?','ein Gepäckträger',['eine Klingel','zwei Bremsen','ein Rücklicht']],
+ ['Warum trägst du beim Radfahren einen Helm?','Er schützt den Kopf bei einem Sturz.',['Weil er schön aussieht.','Damit man schneller fährt.','Damit der Kopf warm bleibt.']],
+ ['Bis zu welchem Alter müssen Kinder mit dem Fahrrad auf dem Gehweg fahren?','bis zum 8. Geburtstag',['bis zum 12. Geburtstag','bis zum 16. Geburtstag','gar nicht']],
+ ['Warum ist es wichtig, die Verkehrsschilder zu kennen?','Damit ich weiß, was ich tun muss, und sicher fahre.',['Weil sie bunt sind.','Damit ich schneller bin.','Das ist nicht wichtig.']]];
+/* Kreuzung „rechts vor links“: Arme N,O,S,W; Fahrzeug aus Arm A hat rechts den Arm RIGHT[A] */
+const ARMS=['N','O','S','W'],RIGHT={N:'W',W:'S',S:'O',O:'N'};
+function kreuzung(occ){
+ const pos={N:[118,28,180],S:[142,212,0],O:[212,118,270],W:[28,142,90]};
+ const veh=occ.map(([arm,lab,typ])=>{const [x,y,rot]=pos[arm];
+  const body=typ==='auto'?`<rect x="-10" y="-16" width="20" height="32" rx="5" fill="#333"/><rect x="-7" y="-11" width="14" height="7" fill="#9cc"/>`:`<circle r="11" fill="#2b6cb0"/><path d="M0 -6 L0 6 M-5 0 L5 0" stroke="#fff" stroke-width="3"/>`;
+  const dx=rot===90?16:rot===270?-16:0,dy=rot===0?-16:rot===180?16:0;
+  return `<g transform="translate(${x} ${y})">${body}</g><g transform="translate(${x+dx*2.6} ${y+dy*2.6}) rotate(${rot})"><path d="M0 14 L0 -6" stroke="${RED}" stroke-width="3" stroke-dasharray="4 3"/><path d="M-6 -4 L0 -14 L6 -4 Z" fill="${RED}"/></g><g transform="translate(${x+(rot===90||rot===270?0:24)} ${y+(rot===90||rot===270?-24:0)})"><rect x="-10" y="-10" width="20" height="20" fill="#fff" stroke="#333"/><text y="5" text-anchor="middle" font-size="14" font-family="Arial" font-weight="700">${lab}</text></g>`}).join('');
+ return svgW('0 0 260 260',`<rect width="260" height="260" fill="#8fbf6f"/><rect x="100" y="0" width="60" height="260" fill="#ddd"/><rect x="0" y="100" width="260" height="60" fill="#ddd"/><path d="M130 0 V95 M130 165 V260 M0 130 H95 M165 130 H260" stroke="#fff" stroke-width="2" stroke-dasharray="8 6"/>${veh}`,240,'Kreuzung');
+}
+function rvlTask(l){
+ let arms;
+ do{arms=shuffle(ARMS).slice(0,l===1?2:3)}while(l===1&&(RIGHT[arms[0]]!==arms[1]&&RIGHT[arms[1]]!==arms[0]));
+ const labs=shuffle(['1','2','3']).slice(0,arms.length);
+ const typ=arms.map(()=>Math.random()<.5?'auto':'rad');
+ const occ=arms.map((a,i)=>[a,labs[i],typ[i]]);
+ let rest=occ.slice(),order=[];
+ while(rest.length){const free=rest.filter(v=>!rest.some(w=>w[0]===RIGHT[v[0]]));if(free.length!==1)return null;order.push(free[0]);rest=rest.filter(v=>v!==free[0])}
+ const nm=v=>`Nr. ${v[1]}`,img=kreuzung(occ);
+ const why=order.map((v,i)=>`${nm(v)}: ${i===0?'von rechts kommt niemand':'jetzt ist rechts frei'}`).join('<br>');
+ if(l===3&&Math.random()<.6){const ok=order.map(v=>v[1]).join(' – ');const all=[...new Set([ok,...shuffle([['1','2','3'],['3','2','1'],['2','1','3'],['1','3','2'],['2','3','1'],['3','1','2']].map(x=>x.join(' – ')))])].slice(0,4);
+  return {kind:'mc',q:'Kreuzung ohne Schilder, alle fahren geradeaus. In welcher Reihenfolge dürfen sie fahren?',img,ilog:'Kreuzung '+occ.map(v=>v[1]+':'+v[0]).join(','),opts:all,
+   tip:'Rechts vor links: Wer niemanden rechts von sich hat, fährt zuerst. Stell dir vor, du sitzt auf dem Fahrzeug und schaust in Fahrtrichtung.',erk:`Reihenfolge: <b>${ok}</b><br>${why}`};}
+ const first=order[0];
+ return {kind:'mc',q:'Kreuzung ohne Schilder, alle fahren geradeaus. Wer darf zuerst fahren?',img,ilog:'Kreuzung '+occ.map(v=>v[1]+':'+v[0]).join(','),opts:[nm(first),...occ.filter(v=>v!==first).map(nm)],
+  tip:'Rechts vor links: Schau vom Fahrzeug aus in Fahrtrichtung. Kommt von rechts jemand, muss es warten.',erk:`<b>${nm(first)}</b> darf zuerst fahren, weil von rechts niemand kommt.<br>${why}`};
+}
+Object.assign(GEN,{
+ rad(l){
+  if(l===1||(l===2&&Math.random()<.5)){const s=fresh(SCHILDER);
+   if(l===1)return {kind:'mc',q:'Wie heißt dieses Verkehrszeichen?',img:SIGN[s[0]],ilog:'Schild '+s[1],opts:[s[1],...s[2]],tip:'Runde blaue Schilder sind Gebote, rote Ringe Verbote, rote Dreiecke Warnungen.',erk:`Das ist das Schild <b>${s[1]}</b>.<br>Bedeutung: ${s[3]}`};
+   return {kind:'mc',q:'Was bedeutet dieses Schild für dich als Radfahrer?',img:SIGN[s[0]],ilog:'Schild '+s[1],opts:[s[3],...s[4]],tip:'Erst überlegen, wie das Schild heißt. Dann, was du tun musst.',erk:`<b>${s[3]}</b><br>(Schild: ${s[1]})`};}
+  if(l===2||Math.random()<.4){const [q,ok,w]=fresh(RADWISSEN);return {kind:'mc',q,opts:[ok,...w],tip:'Denk an dein Heft „Der schlaue Radfahrer“.',erk:`Richtig: <b>${esc(ok)}</b>.`};}
+  let t;do{t=rvlTask(Math.random()<.4?1:3)}while(!t);return t;
+ }
+});
+/* ---------- Marvin Englisch ---------- */
+const HALLO=[['🎃','pumpkin','Kürbis'],['👻','ghost','Gespenst'],['🧙‍♀️','witch','Hexe'],['🦇','bat','Fledermaus'],['🕷️','spider','Spinne'],['🕸️','spider web','Spinnennetz'],['🐈‍⬛','black cat','schwarze Katze'],['💀','skeleton','Skelett'],['🍬','sweets','Süßigkeiten'],['🌙','moon','Mond'],['🧹','broom','Besen'],['🕯️','candle','Kerze'],['🦉','owl','Eule'],['🎭','mask','Maske'],['🏚️','haunted house','Spukhaus'],['🧛','vampire','Vampir'],['🧟','zombie','Zombie'],['🍭','lollipop','Lutscher']];
+const HALLO_S=[['What do children say at the door on Halloween?','Trick or treat!',['Happy birthday!','Good morning!','Merry Christmas!']],['When is Halloween?','on 31st October',['on 24th December','on 1st January','on 14th February']],['What do people put in a pumpkin to make it glow?','a candle',['a ghost','a sweet','a spider']],['What do children wear on Halloween?','a costume',['a school uniform','pyjamas','a swimsuit']],['What do children get on Halloween?','sweets',['homework','presents','flowers']],['Which colours are typical for Halloween?','orange and black',['red and green','pink and blue','white and gold']]];
+const ENG4=[['🔴','red','rot'],['🔵','blue','blau'],['🟢','green','grün'],['🟡','yellow','gelb'],['⚫','black','schwarz'],['⚪','white','weiß'],['🟠','orange','orange'],['🟣','purple','lila'],
+ ['🐶','dog','Hund'],['🐱','cat','Katze'],['🐭','mouse','Maus'],['🐴','horse','Pferd'],['🐮','cow','Kuh'],['🐷','pig','Schwein'],['🐦','bird','Vogel'],['🐟','fish','Fisch'],['🐰','rabbit','Hase; Kaninchen'],
+ ['🍎','apple','Apfel'],['🍌','banana','Banane'],['🍞','bread','Brot'],['🧀','cheese','Käse'],['🥛','milk','Milch'],['🥚','egg','Ei'],['🍕','pizza','Pizza'],['🍓','strawberry','Erdbeere'],
+ ['👕','T-shirt','T-Shirt'],['👖','trousers','Hose'],['👟','shoes','Schuhe'],['🧢','cap','Kappe; Mütze'],['🧦','socks','Socken'],['🧥','jacket','Jacke'],
+ ['👃','nose','Nase'],['👂','ear','Ohr'],['👁️','eye','Auge'],['✋','hand','Hand'],['🦶','foot','Fuß'],['👄','mouth','Mund'],
+ ['🏫','school','Schule'],['📚','books','Bücher'],['✏️','pencil','Bleistift'],['🎒','school bag','Schultasche'],['🏠','house','Haus'],['☀️','sun','Sonne'],['🌧️','rain','Regen'],['❄️','snow','Schnee']];
+const NUMS=['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen','twenty'];
+const DAYS=[['Monday','Montag'],['Tuesday','Dienstag'],['Wednesday','Mittwoch'],['Thursday','Donnerstag'],['Friday','Freitag'],['Saturday','Samstag'],['Sunday','Sonntag']];
+const emo=e=>`<div style="font-size:84px;line-height:1.1">${e}</div>`;
+function wortTask(L,l,tipp){const v=fresh(L),others=shuffle(L.filter(x=>x!==v));
+ if(l===1)return {kind:'mc',q:'What is it? Was ist das auf Englisch?',img:emo(v[0]),ilog:v[2],opts:[v[1],...others.slice(0,3).map(x=>x[1])],tip:tipp,erk:`${v[0]} = <b>${esc(v[1])}</b> (${esc(v[2])})`};
+ if(l===2)return {kind:'mc',q:`Wie heißt „${v[2]}“ auf Englisch?`,opts:[v[1],...others.slice(0,3).map(x=>x[1])],tip:tipp,erk:`${esc(v[2])} = <b>${esc(v[1])}</b>`};
+ return {kind:'text',q:'Schreib das englische Wort:',img:emo(v[0]),calc:v[2],a:[v[1]],tip:`Es fängt mit „${v[1][0]}“ an und hat ${v[1].replace(/ /g,'').length} Buchstaben.`,erk:`${esc(v[2])} = <b>${esc(v[1])}</b>`};}
+Object.assign(GEN,{
+ hallo(l){if(l===2&&Math.random()<.35){const [q,ok,w]=fresh(HALLO_S);return {kind:'mc',q,opts:[ok,...w],tip:'Halloween ist am Abend vor Allerheiligen.',erk:`Richtig: <b>${esc(ok)}</b>`}}
+  return wortTask(HALLO,l,'Schau dir das Bild genau an.')},
+ eng4(l){const r=Math.random();
+  if(r<.2){const n=ri(l===1?1:5,l===1?10:20);
+   if(l===3)return {kind:'text',q:'Write the number in English:',calc:String(n),a:[NUMS[n]],tip:`Es fängt mit „${NUMS[n][0]}“ an.`,erk:`${n} = <b>${NUMS[n]}</b>`};
+   return {kind:'mc',q:`Which number is „${NUMS[n]}“?`,opts:[String(n),...shuffle([n+1,n-1,n+2,n===13?30:n+10].filter(x=>x>=0&&x!==n)).slice(0,3).map(String)],tip:'one, two, three … ten, eleven, twelve, thirteen …',erk:`${NUMS[n]} = <b>${n}</b>`};}
+  if(r<.3){const d=fresh(DAYS);return l===3?{kind:'text',q:'Schreib den Wochentag auf Englisch:',calc:d[1],a:[d[0]],tip:`Er fängt mit „${d[0][0]}“ an. Wochentage schreibt man im Englischen groß.`,erk:`${d[1]} = <b>${d[0]}</b>`}
+   :{kind:'mc',q:`Wie heißt „${d[1]}“ auf Englisch?`,opts:[d[0],...shuffle(DAYS.filter(x=>x!==d).map(x=>x[0])).slice(0,3)],tip:'Monday, Tuesday, Wednesday …',erk:`${d[1]} = <b>${d[0]}</b>`};}
+  return wortTask(ENG4,l,'Schau dir das Bild genau an.')}
+});
+/* ---------- Marvin Mathe: Multi-Schiffe und Mal-Sterne mit Bild ---------- */
+function schiffSvg(top,rows){const h=60+rows.length*34;
+ return svgW(`0 0 220 ${h+46}`,`<path d="M40 14 Q110 -4 180 14 Q160 ${h/2} 180 ${h} Q110 ${h-14} 40 ${h} Q60 ${h/2} 40 14 Z" fill="#fff" stroke="#333" stroke-width="2"/><line x1="110" y1="${h}" x2="110" y2="${h+10}" stroke="#333" stroke-width="3"/><path d="M30 ${h+10} L190 ${h+10} L172 ${h+40} L48 ${h+40} Z" fill="#999" stroke="#333" stroke-width="2"/>
+  <text x="110" y="40" text-anchor="middle" font-size="20" font-family="Arial" font-weight="700">· ${top}</text><line x1="62" y1="48" x2="158" y2="48" stroke="#333"/><line x1="110" y1="48" x2="110" y2="${48+rows.length*34}" stroke="#333"/>
+  ${rows.map(([a,b],i)=>`<text x="86" y="${72+i*34}" text-anchor="middle" font-size="20" font-family="Arial">${a}</text><text x="136" y="${72+i*34}" text-anchor="middle" font-size="20" font-family="Arial" ${b==='?'?'fill="#c0392b" font-weight="700"':''}>${b}</text><line x1="62" y1="${80+i*34}" x2="158" y2="${80+i*34}" stroke="#ccc"/>`).join('')}`,230,'Multi-Schiff');}
+function sternSvg(mid,pts){const n=pts.length,R=92,r=40;let path='';for(let i=0;i<2*n;i++){const ang=-Math.PI/2+i*Math.PI/n,rr=i%2?r:R;path+=(i?'L':'M')+(130+rr*Math.cos(ang)).toFixed(1)+' '+(130+rr*Math.sin(ang)).toFixed(1)}
+ const lab=pts.map(([a,b],i)=>{const ang=-Math.PI/2+i*2*Math.PI/n;const x1=130+64*Math.cos(ang),y1=130+64*Math.sin(ang),x2=130+112*Math.cos(ang),y2=130+112*Math.sin(ang);
+  return `<text x="${x1.toFixed(0)}" y="${(y1+6).toFixed(0)}" text-anchor="middle" font-size="17" font-family="Arial" ${a==='?'?'fill="#c0392b" font-weight="700"':''}>${a}</text><text x="${x2.toFixed(0)}" y="${(y2+6).toFixed(0)}" text-anchor="middle" font-size="17" font-family="Arial" font-weight="700" ${b==='?'?'fill="#c0392b"':''}>${b}</text>`}).join('');
+ return svgW('0 0 260 260',`<path d="${path}Z" fill="#fff4c2" stroke="#d4a300" stroke-width="2"/><circle cx="130" cy="130" r="24" fill="#fff" stroke="#d4a300" stroke-width="2"/><text x="130" y="137" text-anchor="middle" font-size="18" font-family="Arial" font-weight="700">· ${mid}</text>${lab}`,250,'Mal-Stern');}
+Object.assign(GEN,{
+ stern(l){const r=Math.random();
+  if(r<.6){const m=l===1?ri(2,9):l===2?ri(3,9):pick([ri(3,9),ri(2,9)*10]),pts=shuffle([2,3,4,5,6,7,8,9]).slice(0,5),k=ri(0,4);
+   const ask=l===1?(Math.random()<.7?'mal':'geteilt'):l===2?(Math.random()<.5?'mal':'geteilt'):(Math.random()<.3?'mitte':Math.random()<.5?'mal':'geteilt');
+   const T='Mal-Stern: Von innen nach außen wird malgenommen (innen · Mitte = außen), von außen nach innen geteilt (außen : Mitte = innen).';
+   if(ask==='mal'){const show=pts.map((a,i)=>[String(a),i===k?'?':i<k?String(a*m):'']);
+    return {kind:'num',q:T+' Was gehört an die rote Stelle außen?',img:sternSvg(m,show),ilog:`Stern ·${m}, innen ${pts[k]}`,a:pts[k]*m,
+     tip:`Von innen nach außen: ${pts[k]} · ${m}.${m>=10?` Erst ${pts[k]} · ${m/10}, dann eine 0 dran.`:''}`,erk:`${pts[k]} · ${m} = <b>${pts[k]*m}</b>`};}
+   if(ask==='geteilt'){const show=pts.map((a,i)=>[i===k?'?':i<k?String(a):'',String(a*m)]);
+    return {kind:'num',q:T+' Was gehört an die rote Stelle innen?',img:sternSvg(m,show),ilog:`Stern :${m}, außen ${pts[k]*m}`,a:pts[k],
+     tip:`Von außen nach innen: ${pts[k]*m} : ${m}. Frag dich: ? · ${m} = ${pts[k]*m}`,erk:`${pts[k]*m} : ${m} = <b>${pts[k]}</b> (Probe: ${pts[k]} · ${m} = ${pts[k]*m})`};}
+   const show=pts.map((a,i)=>[String(a),i===k?String(a*m):'']);
+   return {kind:'num',q:'Mal-Stern: In der Mitte fehlt die Zahl. Welche Zahl steht in der Mitte?',img:sternSvg('?',show),ilog:`Stern ? ${pts[k]}→${pts[k]*m}`,a:m,
+    tip:`${pts[k]} · ? = ${pts[k]*m}. Rechne ${pts[k]*m} : ${pts[k]}.`,erk:`${pts[k]*m} : ${pts[k]} = <b>${m}</b>`};}
+  const z=l===1?ri(2,9):ri(2,9)*10,as=shuffle([2,3,4,5,6,7,8,9,11,12]).slice(0,3);
+  if(l<3){const k=ri(0,2);return {kind:'num',q:'Multi-Schiff: Rechne die Zahl im Segel mal die linke Zahl. Was gehört an die rote Stelle?',img:schiffSvg(z,as.map((a,i)=>[a,i===k?'?':String(a*z)])),ilog:`Schiff ·${z}, ${as[k]}`,a:as[k]*z,
+   tip:`${as[k]} · ${z}`,erk:`${as[k]} · ${z} = <b>${zahl(as[k]*z)}</b>`};}
+  return {kind:'num',q:'Multi-Schiff: Oben im Segel fehlt die Zahl. Berechne sie zuerst. Was gehört dann an die rote Stelle?',img:schiffSvg('?',[[as[0],String(as[0]*z)],[as[1],'?']]),ilog:`Schiff ? ${as[0]}→${as[0]*z}, ${as[1]}`,a:as[1]*z,
+   tip:`Segel: ${as[0]*z} : ${as[0]}. Dann ${as[1]} · Segelzahl.`,erk:`Segel: ${as[0]*z} : ${as[0]} = ${z}<br>${as[1]} · ${z} = <b>${zahl(as[1]*z)}</b>`};
+ }
+});
+/* ---------- Leonie Mathe: Dreiecke ---------- */
+function dreieckSvg(A,B,C,lab){const [ax,ay]=A,[bx,by]=B,[cx,cy]=C;
+ const t=(x,y,s,c='#111')=>`<text x="${x}" y="${y}" text-anchor="middle" font-size="15" font-family="Arial" fill="${c}">${s}</text>`;
+ const inner=(P,Q,R)=>{const mx=(Q[0]+R[0])/2,my=(Q[1]+R[1])/2;return [P[0]+(mx-P[0])*0.25,P[1]+(my-P[1])*0.25+5]};
+ const [la,lb,lc]=[inner(A,B,C),inner(B,A,C),inner(C,A,B)];
+ return svgW('0 0 260 200',`<path d="M${ax} ${ay} L${bx} ${by} L${cx} ${cy} Z" fill="#eef4ff" stroke="#1d5fb4" stroke-width="2.5"/>${t(ax-10,ay+16,'A')}${t(bx+10,by+16,'B')}${t(cx,cy-8,'C')}${t(la[0],la[1],lab[0],'#c0392b')}${t(lb[0],lb[1],lab[1],'#c0392b')}${t(lc[0],lc[1],lab[2],'#c0392b')}`,250,'Dreieck');}
+const DREI_MC=[
+ ['Ein Dreieck hat einen Winkel von genau 90°. Wie heißt es?','rechtwinklig',['spitzwinklig','stumpfwinklig','gleichseitig']],
+ ['Alle drei Winkel sind kleiner als 90°. Wie heißt das Dreieck?','spitzwinklig',['rechtwinklig','stumpfwinklig','gleichschenklig']],
+ ['Ein Winkel ist größer als 90°. Wie heißt das Dreieck?','stumpfwinklig',['spitzwinklig','rechtwinklig','gleichseitig']],
+ ['Alle drei Seiten sind gleich lang. Wie heißt das Dreieck?','gleichseitig',['gleichschenklig','rechtwinklig','unregelmäßig']],
+ ['Zwei Seiten sind gleich lang. Wie heißt das Dreieck?','gleichschenklig',['gleichseitig','stumpfwinklig','spitzwinklig']],
+ ['Wie groß ist jeder Winkel im gleichseitigen Dreieck?','60°',['90°','45°','30°']],
+ ['Was gilt für die Basiswinkel im gleichschenkligen Dreieck?','Sie sind gleich groß.',['Sie sind zusammen 90°.','Einer ist doppelt so groß.','Sie sind immer 60°.']],
+ ['Wie groß ist die Winkelsumme im Dreieck?','180°',['360°','90°','270°']],
+ ['Kann ein Dreieck zwei rechte Winkel haben?','Nein, dann wären es schon 180° ohne den dritten Winkel.',['Ja, immer.','Ja, wenn es gleichseitig ist.','Nur wenn es stumpfwinklig ist.']],
+ ['Gibt es ein Dreieck mit den Seiten 3 cm, 4 cm und 9 cm?','Nein, 3 + 4 ist kleiner als 9.',['Ja.','Nur wenn es rechtwinklig ist.','Nur wenn es gleichschenklig ist.']],
+ ['Was sagt die Dreiecksungleichung?','Zwei Seiten zusammen sind immer länger als die dritte Seite.',['Alle Seiten sind verschieden lang.','Die Winkel sind zusammen 360°.','Eine Seite ist immer doppelt so lang.']],
+ ['Wie berechnet man den Flächeninhalt eines Dreiecks?','A = g · h : 2',['A = g · h','A = a + b + c','A = g : h']],
+ ['Welcher Kongruenzsatz passt: Alle drei Seiten sind gegeben.','SSS',['SWS','WSW','SsW']],
+ ['Welcher Kongruenzsatz passt: Zwei Seiten und der eingeschlossene Winkel sind gegeben.','SWS',['SSS','WSW','WWW']],
+ ['Welcher Kongruenzsatz passt: Eine Seite und die beiden anliegenden Winkel sind gegeben.','WSW',['SWS','SSS','SsW']],
+ ['Legen drei Winkel (WWW) ein Dreieck eindeutig fest?','Nein, das Dreieck kann verschieden groß sein.',['Ja, immer.','Nur bei 90°.','Nur bei gleichseitigen Dreiecken.']],
+ ['Was bedeutet „kongruent“?','deckungsgleich: gleiche Form und gleiche Größe',['nur gleiche Form','nur gleicher Flächeninhalt','gleicher Umfang']],
+ ['Wo schneiden sich die Mittelsenkrechten eines Dreiecks?','im Mittelpunkt des Umkreises',['im Mittelpunkt des Inkreises','im Schwerpunkt','immer in einer Ecke']],
+ ['Wo schneiden sich die Winkelhalbierenden eines Dreiecks?','im Mittelpunkt des Inkreises',['im Mittelpunkt des Umkreises','im Schwerpunkt','auf einer Seite']],
+ ['Wo schneiden sich die Seitenhalbierenden eines Dreiecks?','im Schwerpunkt',['im Umkreismittelpunkt','im Inkreismittelpunkt','in der Mitte der längsten Seite']],
+ ['Was ist eine Höhe im Dreieck?','die Strecke von einer Ecke senkrecht auf die gegenüberliegende Seite',['die längste Seite','die Strecke von einer Ecke zur Mitte der Gegenseite','die Linie, die einen Winkel halbiert']]];
+const DREI_A=DREI_MC.slice(0,8),DREI_B=DREI_MC.slice(5,12),DREI_C=DREI_MC.slice(12);
+Object.assign(GEN,{
+ dreieck(l){const r=Math.random();
+  if(l===1){
+   if(r<.6){let a,b;do{a=ri(25,110);b=ri(20,120)}while(a+b>=165);const g=180-a-b;
+    return {kind:'num',q:'Wie groß ist der Winkel γ? (Skizze, nicht maßstabsgetreu)',img:dreieckSvg([30,170],[230,170],[90+ri(0,60),30],[`α = ${a}°`,`β = ${b}°`,'γ = ?']),ilog:`α=${a}, β=${b}`,unit:'°',a:g,
+     tip:'Im Dreieck sind alle Winkel zusammen 180°.',erk:`γ = 180° − ${a}° − ${b}° = <b>${g}°</b>`};}
+   const [q,ok,w]=fresh(DREI_A);return {kind:'mc',q,opts:[ok,...w],tip:'Winkelsumme 180°. Arten nach Winkeln: spitz/recht/stumpf. Nach Seiten: gleichseitig/gleichschenklig.',erk:`Richtig: <b>${esc(ok)}</b>.`};
+  }
+  if(l===2){
+   if(r<.3){const g=ri(20,140);const bw=(180-g)/2;if(bw%1)return GEN.dreieck(2);
+    return {kind:'num',q:'Das Dreieck ist gleichschenklig (AC = BC). Wie groß ist ein Basiswinkel α? (Skizze)',img:dreieckSvg([40,170],[220,170],[130,30],['α = ?','β','γ = '+g+'°']),ilog:`gleichschenklig γ=${g}`,unit:'°',a:bw,
+     tip:'Die beiden Basiswinkel sind gleich groß. Zusammen mit γ ergeben sie 180°.',erk:`α = β = (180° − ${g}°) : 2 = <b>${zahl(bw)}°</b>`};}
+   if(r<.55){const g=ri(3,14),h=ri(2,12);const A=g*h/2;
+    return {kind:'num',q:`Ein Dreieck hat die Grundseite g = ${g} cm und die Höhe h = ${h} cm. Wie groß ist der Flächeninhalt?`,unit:'cm²',a:A,tip:'A = g · h : 2',erk:`A = ${g} · ${h} : 2 = ${g*h} : 2 = <b>${zahl(A)} cm²</b>`};}
+   if(r<.75){let a,b;do{a=ri(30,100);b=ri(30,100)}while(a+b>=170);
+    return {kind:'num',q:`Ein Dreieck hat die Winkel α = ${a}° und β = ${b}°. Wie groß ist der Außenwinkel bei C (Nebenwinkel von γ)?`,unit:'°',a:a+b,
+     tip:'Der Außenwinkel ist 180° − γ. Er ist genauso groß wie α + β.',erk:`γ = 180° − ${a}° − ${b}° = ${180-a-b}°. Außenwinkel = 180° − ${180-a-b}° = <b>${a+b}°</b> (= α + β)`};}
+   const [q,ok,w]=fresh(DREI_B);return {kind:'mc',q,opts:[ok,...w],tip:'Dreiecksungleichung: Zwei Seiten zusammen sind länger als die dritte.',erk:`Richtig: <b>${esc(ok)}</b>.`};
+  }
+  if(r<.35){const ok=Math.random()<.5;let a,b,c;do{a=ri(2,12);b=ri(2,12);c=ok?ri(Math.abs(a-b)+1,a+b-1):a+b+ri(0,4)}while(c<1);
+   return {kind:'mc',q:`Kann man ein Dreieck mit den Seiten ${a} cm, ${b} cm und ${c} cm zeichnen?`,opts:[ok?'Ja':'Nein',ok?'Nein':'Ja'],
+    tip:'Die zwei kürzeren Seiten zusammen müssen länger sein als die längste Seite.',erk:ok?`<b>Ja</b>: Jede Seite ist kürzer als die beiden anderen zusammen.`:`<b>Nein</b>: ${Math.min(a,b)} + ${Math.max(a,b)} = ${a+b} ist nicht länger als ${c}.`};}
+  if(r<.5){const g=ri(4,16),A=g*ri(2,10)/2,h=2*A/g;
+   return {kind:'num',q:`Ein Dreieck hat den Flächeninhalt A = ${zahl(A)} cm² und die Grundseite g = ${g} cm. Wie lang ist die Höhe h?`,unit:'cm',a:h,
+    tip:'A = g · h : 2, also h = 2 · A : g.',erk:`h = 2 · ${zahl(A)} : ${g} = ${zahl(2*A)} : ${g} = <b>${zahl(h)} cm</b>`};}
+  const [q,ok,w]=fresh(DREI_C);return {kind:'mc',q,opts:[ok,...w],tip:'SSS, SWS, WSW, SsW legen ein Dreieck eindeutig fest. Umkreis: Mittelsenkrechten. Inkreis: Winkelhalbierende.',erk:`Richtig: <b>${esc(ok)}</b>.`};
+ }
+});
+/* ---------- Leonie Deutsch: Debatte ---------- */
+const DEB_BBB=[
+ ['Handys sollten in der Schule erlaubt sein.','Behauptung (These)'],['Wir sollten mehr Fahrrad fahren.','Behauptung (These)'],['Die Schule sollte später anfangen.','Behauptung (These)'],['Hausaufgaben sollten abgeschafft werden.','Behauptung (These)'],['Unsere Schule braucht einen Kiosk mit gesundem Essen.','Behauptung (These)'],
+ ['Denn mit dem Handy kann man schnell Informationen für den Unterricht nachschlagen.','Begründung (Argument)'],['Weil Radfahren gesund ist und die Umwelt schont.','Begründung (Argument)'],['Denn Jugendliche sind morgens oft noch sehr müde.','Begründung (Argument)'],['Weil man in der Freizeit Zeit für Hobbys braucht.','Begründung (Argument)'],
+ ['Zum Beispiel konnte unsere Klasse letzte Woche im Erdkundeunterricht eine Karte am Handy nutzen.','Beispiel (Beleg)'],['So spart Familie Maier jeden Monat 50 Euro Benzin, seit sie mit dem Rad zur Arbeit fährt.','Beispiel (Beleg)'],['Eine Studie zeigt, dass Schüler mit mehr Schlaf bessere Noten schreiben.','Beispiel (Beleg)'],['Meine Schwester schafft wegen der vielen Hausaufgaben ihr Fußballtraining kaum noch.','Beispiel (Beleg)']];
+const DEB_ART=['Behauptung (These)','Begründung (Argument)','Beispiel (Beleg)'];
+const DEB_PC=[
+ ['Sollen Handys in der Schule erlaubt sein?','Man kann im Unterricht schnell etwas recherchieren.','Pro'],['Sollen Handys in der Schule erlaubt sein?','Handys lenken im Unterricht ab.','Contra'],['Sollen Handys in der Schule erlaubt sein?','In Notfällen können Eltern erreicht werden.','Pro'],['Sollen Handys in der Schule erlaubt sein?','In der Pause reden die Schüler weniger miteinander.','Contra'],
+ ['Soll die Schule erst um 9 Uhr beginnen?','Ausgeschlafene Schüler können sich besser konzentrieren.','Pro'],['Soll die Schule erst um 9 Uhr beginnen?','Der Unterricht dauert dann bis in den Nachmittag.','Contra'],['Soll die Schule erst um 9 Uhr beginnen?','Viele Eltern müssen schon früh zur Arbeit.','Contra'],
+ ['Sollen Schuluniformen eingeführt werden?','Niemand wird wegen teurer Markenkleidung ausgegrenzt.','Pro'],['Sollen Schuluniformen eingeführt werden?','Man kann seinen eigenen Stil nicht mehr zeigen.','Contra'],['Sollen Schuluniformen eingeführt werden?','Morgens muss man nicht lange überlegen, was man anzieht.','Pro'],
+ ['Soll es an unserer Schule einen fleischfreien Tag in der Mensa geben?','Weniger Fleisch ist gut für Klima und Gesundheit.','Pro'],['Soll es an unserer Schule einen fleischfreien Tag in der Mensa geben?','Man sollte selbst entscheiden dürfen, was man isst.','Contra']];
+const DEB_MC=[
+ ['Welche Frage eignet sich als Streitfrage für eine Debatte?','Sollen an unserer Schule Handys im Unterricht erlaubt sein?',['Wie viele Schüler hat unsere Schule?','Was ist ein Handy?','Wann beginnt die erste Stunde?']],
+ ['Woran erkennt man eine gute Streitfrage?','Man kann sie mit Ja oder Nein beantworten und es gibt gute Gründe für beide Seiten.',['Sie hat nur eine richtige Antwort.','Sie beginnt mit „Wie viel“.','Sie ist eine Wissensfrage.']],
+ ['Womit beginnt eine Streitfrage für eine Debatte meistens?','mit „Soll …“ bzw. „Sollen …“',['mit „Wie viel …“','mit „Wann …“','mit „Wer …“']],
+ ['Was ist das Ziel einer Debatte?','andere mit guten Argumenten zu überzeugen',['möglichst laut zu sprechen','den Gegner zu beleidigen','möglichst lange zu reden']],
+ ['Wie ist ein überzeugendes Argument aufgebaut?','Behauptung – Begründung – Beispiel',['Beispiel – Schluss – Einleitung','Frage – Antwort – Frage','Begrüßung – Behauptung – Abschied']],
+ ['Was bedeutet „Pro“?','dafür',['dagegen','unentschieden','neutral']],
+ ['Was bedeutet „Contra“?','dagegen',['dafür','unentschieden','vielleicht']],
+ ['Wie verhältst du dich in einer Debatte?','ausreden lassen, sachlich bleiben, auf die Argumente der anderen eingehen',['dazwischenrufen','persönlich werden','nur die eigene Meinung wiederholen']],
+ ['Was macht die Moderation in einer Debatte?','Sie eröffnet die Debatte, erteilt das Wort und achtet auf die Zeit und die Regeln.',['Sie entscheidet, wer recht hat.','Sie spricht nur für die Pro-Seite.','Sie schreibt die Argumente der anderen.']],
+ ['Was ist ein Gegenargument?','ein Argument der anderen Seite',['ein besonders lautes Argument','ein Beispiel','eine Streitfrage']],
+ ['Wie entkräftest du ein Gegenargument?','Du greifst es auf und zeigst mit einer Begründung, warum es nicht überzeugt.',['Du ignorierst es.','Du sagst, dass es dumm ist.','Du wiederholst deine Behauptung lauter.']],
+ ['Wie läuft eine Debatte meistens ab?','Eröffnungsrunde – freie Aussprache – Schlussrunde',['Schlussrunde – Eröffnungsrunde – Pause','nur freie Aussprache','Abstimmung – Eröffnung – Ende']],
+ ['Was passiert in der Eröffnungsrunde?','Jeder sagt nacheinander und ohne Unterbrechung seine Position zur Streitfrage.',['Alle reden durcheinander.','Die Jury verkündet das Ergebnis.','Man fasst am Ende zusammen.']],
+ ['Was passiert in der Schlussrunde?','Jeder sagt noch einmal kurz, wie er die Streitfrage jetzt beantwortet und warum.',['Man stellt neue Themen vor.','Man begrüßt das Publikum.','Man liest das Protokoll vor.']],
+ ['Welcher Satz ist sachlich formuliert?','Ich sehe das anders, weil …',['Das ist doch Quatsch!','Du hast keine Ahnung!','Das ist mir egal.']],
+ ['Welches Argument ist am überzeugendsten?','eines mit nachvollziehbarer Begründung und konkretem Beleg',['eines, das man oft wiederholt','eines ohne Begründung','eines, das laut gesagt wird']]];
+const DEB_A=DEB_MC.slice(0,8),DEB_B=DEB_MC.slice(4,12),DEB_C=DEB_MC.slice(8);
+Object.assign(GEN,{
+ debatte(l){const r=Math.random();
+  if(l===1&&r<.5||l===2&&r<.35){const [s,a]=fresh(DEB_BBB);return {kind:'mc',q:`„${s}“ Was ist das?`,opts:[a,...DEB_ART.filter(x=>x!==a)],
+   tip:'Behauptung = was du willst oder meinst. Begründung = warum (weil, denn). Beispiel = konkreter Fall, Zahl, Erfahrung.',erk:`Das ist eine <b>${a}</b>.`};}
+  if(l===2&&r<.75||l===3&&r<.4){const [f,s,a]=fresh(DEB_PC);return {kind:'mc',q:`Streitfrage: „${f}“ Ist dieses Argument Pro oder Contra? „${s}“`,opts:[a,a==='Pro'?'Contra':'Pro'],
+   tip:'Pro = spricht dafür, dass man es macht. Contra = spricht dagegen.',erk:`<b>${a}</b>: Das Argument spricht ${a==='Pro'?'dafür':'dagegen'}.`};}
+  const [q,ok,w]=fresh(l===1?DEB_A:l===2?DEB_B:DEB_C);return {kind:'mc',q,opts:[ok,...w],tip:'Debatte: Streitfrage mit „Soll …?“, Argument = Behauptung + Begründung + Beispiel, sachlich bleiben.',erk:`Richtig: <b>${esc(ok)}</b>.`};
+ }
+});
+UEB.marvin.unshift(
+ {id:'u-rad',gen:'rad',fach:'HSU',titel:'Fahrradprüfung',kurz:'Verkehrsschilder, Zebrastreifen, rechts vor links (mit Bildern)',grp:'akt',check:null},
+ {id:'u-stern',gen:'stern',fach:'Mathe',titel:'Multi-Schiffe und Mal-Sterne',kurz:'Malnehmen mit Bildern, fehlende Zahlen finden',grp:'akt',check:null},
+ {id:'u-hallo',gen:'hallo',fach:'Englisch',titel:'Halloween',kurz:'pumpkin, ghost, witch … mit Bildern',grp:'akt',check:null},
+ {id:'u-eng4',gen:'eng4',fach:'Englisch',titel:'Englisch Grundwortschatz',kurz:'Farben, Zahlen, Tiere, Essen, Kleidung, Wochentage',grp:'akt',check:null});
+(UEB.marvin.find(t=>t.id==='u-zehner')||{}).grp='fit';
+UEB.leonie.unshift(
+ {id:'u-dreieck',gen:'dreieck',fach:'Mathe',titel:'Dreiecke',kurz:'Winkelsumme, Dreiecksarten, Fläche, Kongruenz, besondere Linien',grp:'akt',check:null},
+ {id:'u-debatte',gen:'debatte',fach:'Deutsch',titel:'Debatte',kurz:'Streitfrage, Pro und Contra, Behauptung – Begründung – Beispiel',grp:'akt',check:null});
+
+/* ---------- Leonie IT: Diagramme ---------- */
+const DCOL=['#1d5fb4','#e67e22','#2e9e4f','#8e44ad','#c0392b'];
+function saeuleSvg(labs,vals){const mx=Math.max(...vals),W=260,H=170,bw=Math.min(40,170/labs.length);
+ return svgW(`0 0 ${W} ${H+40}`,`<line x1="30" y1="10" x2="30" y2="${H}" stroke="#333"/><line x1="30" y1="${H}" x2="${W-5}" y2="${H}" stroke="#333"/>${[0,.5,1].map(f=>`<text x="26" y="${H-f*(H-20)+4}" text-anchor="end" font-size="10" font-family="Arial">${Math.round(f*mx)}</text><line x1="30" y1="${H-f*(H-20)}" x2="${W-5}" y2="${H-f*(H-20)}" stroke="#ddd"/>`).join('')}
+ ${labs.map((t,i)=>{const x=40+i*(W-50)/labs.length,h=vals[i]/mx*(H-20);return `<rect x="${x}" y="${H-h}" width="${bw}" height="${h}" fill="${DCOL[0]}"/><text x="${x+bw/2}" y="${H-h-4}" text-anchor="middle" font-size="11" font-family="Arial">${vals[i]}</text><text x="${x+bw/2}" y="${H+16}" text-anchor="middle" font-size="10" font-family="Arial">${t}</text>`}).join('')}`,260,'Säulendiagramm');}
+function kreisSvg(labs,pc){let a0=-Math.PI/2,out='';pc.forEach((p,i)=>{const a1=a0+p/100*2*Math.PI,lg=p>50?1:0;
+  out+=`<path d="M100 100 L${(100+80*Math.cos(a0)).toFixed(1)} ${(100+80*Math.sin(a0)).toFixed(1)} A80 80 0 ${lg} 1 ${(100+80*Math.cos(a1)).toFixed(1)} ${(100+80*Math.sin(a1)).toFixed(1)} Z" fill="${DCOL[i]}" stroke="#fff" stroke-width="2"/>`;a0=a1});
+ return svgW('0 0 280 200',out+labs.map((t,i)=>`<rect x="195" y="${30+i*22}" width="12" height="12" fill="${DCOL[i]}"/><text x="212" y="${41+i*22}" font-size="12" font-family="Arial">${t}${pc[i]!=null?'':''}</text>`).join(''),260,'Kreisdiagramm');}
+function linieSvg(labs,vals){const mx=Math.max(...vals)+2,mn=Math.min(0,...vals),W=260,H=170,y=v=>H-(v-mn)/(mx-mn)*(H-20);
+ const pts=vals.map((v,i)=>[40+i*(W-60)/(labs.length-1),y(v)]);
+ return svgW(`0 0 ${W} ${H+30}`,`<line x1="30" y1="10" x2="30" y2="${H}" stroke="#333"/><line x1="30" y1="${H}" x2="${W-5}" y2="${H}" stroke="#333"/><path d="M${pts.map(p=>p.join(' ')).join(' L')}" fill="none" stroke="${DCOL[1]}" stroke-width="2.5"/>${pts.map((p,i)=>`<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="${DCOL[1]}"/><text x="${p[0]}" y="${p[1]-8}" text-anchor="middle" font-size="11" font-family="Arial">${vals[i]}</text><text x="${p[0]}" y="${H+16}" text-anchor="middle" font-size="10" font-family="Arial">${labs[i]}</text>`).join('')}`,260,'Liniendiagramm');}
+const DIA_WAHL=[
+ ['Du willst zeigen, wie sich die Temperatur im Laufe einer Woche verändert.','Liniendiagramm',['Kreisdiagramm','Säulendiagramm (gruppiert)']],
+ ['Du willst zeigen, wie sich dein Taschengeld auf Essen, Kleidung, Freizeit und Sparen aufteilt (zusammen 100 %).','Kreisdiagramm',['Liniendiagramm','Säulendiagramm (gruppiert)']],
+ ['Du willst vergleichen, wie viele Bücher die Klassen 8a, 8b, 8c und 8d gelesen haben.','Säulendiagramm',['Kreisdiagramm','Liniendiagramm']],
+ ['Du willst zeigen, wie sich die Einwohnerzahl einer Stadt von 1990 bis 2025 entwickelt hat.','Liniendiagramm',['Kreisdiagramm','Säulendiagramm (gruppiert)']],
+ ['Du willst bei einer Klassenumfrage zeigen, welcher Anteil der Klasse welches Haustier hat.','Kreisdiagramm',['Liniendiagramm','Säulendiagramm (gruppiert)']],
+ ['Du willst die Noten von Mädchen und Jungen in drei Fächern nebeneinander vergleichen.','Säulendiagramm (gruppiert)',['Kreisdiagramm','Liniendiagramm']],
+ ['Du willst zeigen, wie sich deine Laufzeit beim 800-m-Lauf über mehrere Monate verbessert.','Liniendiagramm',['Kreisdiagramm','Säulendiagramm (gruppiert)']],
+ ['Du willst zeigen, wie viel Prozent der Schüler mit Bus, Rad, Auto oder zu Fuß zur Schule kommen.','Kreisdiagramm',['Liniendiagramm','Säulendiagramm (gruppiert)']],
+ ['Du willst die Verkaufszahlen am Schulkiosk für Brezen, Semmeln und Obst in vier Wochen vergleichen (mehrere Datenreihen).','Säulendiagramm (gruppiert)',['Kreisdiagramm','Liniendiagramm']],
+ ['Du willst die Niederschlagsmenge in den 12 Monaten eines Jahres vergleichen.','Säulendiagramm',['Kreisdiagramm','Liniendiagramm']]];
+const DIA_MC=[
+ ['Was ist ein Diagramm?','eine grafische Darstellung von Daten oder Informationen',['eine Tabelle mit Text','ein Foto','eine Formel in Excel']],
+ ['Wozu verwendet man ein Diagramm?','um Zahlen übersichtlich und anschaulich darzustellen und Aussagen auf einen Blick zu erkennen',['um Text schöner zu schreiben','um Rechenfehler zu verstecken','um ein Dokument zu speichern']],
+ ['Wo fügst du in Word ein Diagramm ein?','Einfügen → Illustrationen → Diagramm',['Start → Schriftart → Diagramm','Datei → Speichern unter','Ansicht → Lineal']],
+ ['Was entspricht beim Kreisdiagramm der ganze Kreis?','100 %',['50 %','360 Werte','dem größten Wert']],
+ ['Wann ist ein Kreisdiagramm ungünstig?','wenn es sehr viele Kategorien gibt oder die Teile kein Ganzes ergeben',['wenn es nur drei Kategorien gibt','wenn die Anteile zusammen 100 % ergeben','wenn man Anteile zeigen will']],
+ ['Wofür eignet sich ein Liniendiagramm besonders?','für Entwicklungen über einen Zeitraum',['für Anteile an einem Ganzen','nur für eine einzige Zahl','für Texte']],
+ ['Was zeigen beim Liniendiagramm die Punkte und die Linien?','Die Punkte sind die Messwerte, die Linien machen den Verlauf sichtbar.',['Die Punkte sind Fehler, die Linien die Lösung.','Beides ist nur Verzierung.','Die Linien sind die Messwerte, die Punkte die Achsen.']],
+ ['Wofür eignet sich ein gruppiertes Säulendiagramm?','um mehrere Datenreihen in verschiedenen Kategorien zu vergleichen',['um Anteile an einem Ganzen zu zeigen','um nur einen einzigen Wert zu zeigen','um Text darzustellen']],
+ ['Was ist die Legende eines Diagramms?','die Erklärung, welche Farbe oder welches Zeichen wofür steht',['die Überschrift','die längste Säule','die x-Achse']],
+ ['Was sollte jedes Diagramm haben, damit man es versteht?','einen Titel und beschriftete Achsen bzw. eine Legende',['möglichst viele Farben','3-D-Effekte','keine Zahlen']],
+ ['Was ist der Unterschied zwischen Säulen- und Balkendiagramm?','Säulen stehen senkrecht, Balken liegen waagrecht.',['Es gibt keinen Unterschied.','Balken zeigen Anteile in Prozent.','Säulen sind immer 3-D.']]];
+Object.assign(GEN,{
+ diagramm(l){const r=Math.random();
+  if(l===1&&r<.4||l===2&&r<.2){const t=pick(['s','k','l']);const img=t==='s'?saeuleSvg(['A','B','C','D'],[ri(2,9),ri(2,9),ri(2,9),ri(2,9)]):t==='k'?kreisSvg(['Teil 1','Teil 2','Teil 3'],[50,30,20]):linieSvg(['Mo','Di','Mi','Do','Fr'],[ri(5,15),ri(5,15),ri(5,15),ri(5,15),ri(5,15)]);
+   const ok={s:'Säulendiagramm',k:'Kreisdiagramm',l:'Liniendiagramm'}[t];
+   return {kind:'mc',q:'Welcher Diagrammtyp ist das?',img,ilog:ok,opts:[ok,...['Säulendiagramm','Kreisdiagramm','Liniendiagramm'].filter(x=>x!==ok)],tip:'Säulen = Rechtecke nebeneinander, Kreis = Tortenstücke, Linie = Punkte verbunden.',erk:`Das ist ein <b>${ok}</b>.`};}
+  if(l===1&&r<.75||l===2&&r<.5){const [q,ok,w]=fresh(DIA_WAHL);return {kind:'mc',q:q+' Welches Diagramm passt am besten?',opts:[ok,...w],tip:'Verlauf über die Zeit → Linie. Anteile am Ganzen (100 %) → Kreis. Werte vergleichen → Säulen.',erk:`Am besten passt ein <b>${ok}</b>.`};}
+  if(l===1||l===2&&r<.75){const [q,ok,w]=fresh(DIA_MC);return {kind:'mc',q,opts:[ok,...w],tip:'Denk an das Arbeitsblatt „Diagramm in Word“.',erk:`Richtig: <b>${esc(ok)}</b>.`};}
+  const t=ri(0,2);
+  if(t===0){const labs=['Bus','Rad','Auto','zu Fuß'];let pc;do{const a=ri(2,8)*5,b=ri(1,6)*5,c=ri(1,4)*5;pc=[a,b,c,100-a-b-c]}while(pc[3]<5);const k=ri(0,3);
+   return {kind:'num',q:`Umfrage „Wie kommst du zur Schule?“. Bus ${k===0?'?':pc[0]+' %'}, Rad ${k===1?'?':pc[1]+' %'}, Auto ${k===2?'?':pc[2]+' %'}, zu Fuß ${k===3?'?':pc[3]+' %'}. Wie viel Prozent fehlen?`,img:kreisSvg(labs,pc),ilog:'Kreis '+pc.join('/'),unit:'%',a:pc[k],
+    tip:'Der ganze Kreis sind 100 %.',erk:`100 % − ${pc.filter((_,i)=>i!==k).join(' % − ')} % = <b>${pc[k]} %</b>`};}
+  if(t===1){const labs=['8a','8b','8c','8d'],vals=labs.map(()=>ri(4,30)),i=ri(0,3),j=(i+ri(1,3))%4;
+   return {kind:'num',q:`Gelesene Bücher pro Klasse. Wie viele Bücher hat die ${labs[i]} mehr oder weniger als die ${labs[j]}? (Unterschied)`,img:saeuleSvg(labs,vals),ilog:'Säulen '+vals.join('/'),a:Math.abs(vals[i]-vals[j]),
+    tip:'Lies beide Säulen ab und ziehe den kleineren vom größeren Wert ab.',erk:`|${vals[i]} − ${vals[j]}| = <b>${Math.abs(vals[i]-vals[j])}</b>`};}
+  const labs=['Mo','Di','Mi','Do','Fr'],vals=labs.map(()=>ri(2,18));let best=0;for(let i=1;i<4;i++)if(vals[i+1]-vals[i]>vals[best+1]-vals[best])best=i;
+  if(vals[best+1]-vals[best]<=0||vals.filter((v,i)=>i<4&&vals[i+1]-v===vals[best+1]-vals[best]).length>1)return GEN.diagramm(3);
+  return {kind:'mc',q:'Temperaturen einer Woche (°C). Zwischen welchen Tagen ist die Temperatur am stärksten gestiegen?',img:linieSvg(labs,vals),ilog:'Linie '+vals.join('/'),opts:[`${labs[best]} → ${labs[best+1]}`,...[0,1,2,3].filter(i=>i!==best).map(i=>`${labs[i]} → ${labs[i+1]}`)],
+   tip:'Suche das steilste Stück der Linie nach oben.',erk:`${labs[best]} → ${labs[best+1]}: ${vals[best]} → ${vals[best+1]}, also <b>+${vals[best+1]-vals[best]} °C</b>`};
+ }
+});
+UEB.leonie.push({id:'u-diagramm',gen:'diagramm',fach:'IT',titel:'Diagramme',kurz:'Säulen-, Kreis- und Liniendiagramm: was passt wofür?',grp:'akt',check:null});
+
 /* ---------- Versand an Google-Tabelle ---------- */
 const SYNC_KEY='lernstand-sync-v1';
 function syncCfg(){try{return JSON.parse(localStorage.getItem(SYNC_KEY))||{}}catch(e){return {}}}
