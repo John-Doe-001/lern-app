@@ -1343,7 +1343,7 @@ Object.assign(GEN,{
     const v=down?pick([0.5,1.5,2,2.5,3.2,4,0.25,0.75,1.2,7,12.5]):pick([5,20,45,250,600,1500,75,8,120,3500]);
     const res=r6(down?v*f:v/f);
     return {kind:'num',q:'Wandle um:',calc:`${fmt(v)} ${down?g:k} = ? ${down?k:g}`,unit:down?k:g,a:res,
-     tip:`1 ${g} = ${zahl(f)} ${k}. Von ${down?g+' nach '+k+' malnehmen':k+' nach '+g+' teilen'} mit ${zahl(f)}.`,
+     tip:`1 ${g} = ${zahl(f)} ${k}. ${down?`${g} ist die größere Einheit, also wird die Zahl größer: mal ${zahl(f)}.`:`${g} ist die größere Einheit, also wird die Zahl kleiner: durch ${zahl(f)}.`}`,
      erk:`${fmt(v)} ${down?g:k} ${down?'·':':'} ${zahl(f)} = <b>${fmt(res)} ${down?k:g}</b>`};}
    const r=Math.random();
    if(r<.3){const h=ri(1,3),m=ri(5,55);
@@ -1402,17 +1402,17 @@ Object.assign(GEN,{
  geschw(l){
   if(l===1){
    const r=Math.random();
-   if(r<.35){const k=pick(VKMH),m=r6(k/3.6);
-    return {kind:'num',q:'Rechne in m/s um:',calc:`${k} km/h = ? m/s`,unit:'m/s',a:m,tip:'km/h → m/s: durch 3,6 teilen.',erk:`${k} : 3,6 = <b>${kz(m)} m/s</b>`};}
+   if(r<.35){const v=ri(2,25),t=ri(4,40);
+    return {kind:'num',q:`Ein Körper legt ${v*t} m in ${t} s zurück. Wie groß ist seine Geschwindigkeit?`,unit:'m/s',a:v,tip:'v = s : t, also Weg geteilt durch Zeit.',
+     erk:vSchema(`s = ${v*t} m, t = ${t} s`,'v in m/s','v = s : t',`v = ${v*t} m : ${t} s`,`<b>v = ${v} m/s</b>`)};}
    if(r<.7){const m=pick([2,4,5,10,12,15,20,25,30,40,2.5,7.5,12.5]),k=r6(m*3.6);
     return {kind:'num',q:'Rechne in km/h um:',calc:`${kz(m)} m/s = ? km/h`,unit:'km/h',a:k,tip:'m/s → km/h: mal 3,6.',erk:`${kz(m)} · 3,6 = <b>${kz(k)} km/h</b>`};}
    const [q,ok,w]=fresh(GESCHW_MC);return {kind:'mc',q,opts:[ok,...w],tip:'v = s : t. 1 m/s = 3,6 km/h.',erk:`Richtig: <b>${esc(ok)}</b>.`};
   }
   if(l===2){
    const r=Math.random();
-   if(r<.3){const v=ri(2,25),t=ri(4,40);
-    return {kind:'num',q:`Ein Körper legt ${v*t} m in ${t} s zurück. Wie groß ist seine Geschwindigkeit?`,unit:'m/s',a:v,tip:'v = s : t',
-     erk:vSchema(`s = ${v*t} m, t = ${t} s`,'v in m/s','v = s : t',`v = ${v*t} m : ${t} s`,`<b>v = ${v} m/s</b>`)};}
+   if(r<.3){const k=pick(VKMH),m=r6(k/3.6);
+    return {kind:'num',q:'Rechne in m/s um:',calc:`${k} km/h = ? m/s`,unit:'m/s',a:m,tip:'km/h → m/s: durch 3,6 teilen.',erk:`${k} : 3,6 = <b>${kz(m)} m/s</b>`};}
    if(r<.55){const v=pick([30,40,50,60,70,80,90,100,120]),t=pick([0.5,1.5,2,2.5,3,4]),s=r6(v*t);
     return {kind:'num',q:`Ein Auto fährt ${kz(t)} h lang mit ${v} km/h. Wie weit kommt es?`,unit:'km',a:s,tip:'s = v · t',
      erk:vSchema(`v = ${v} km/h, t = ${kz(t)} h`,'s in km','v = s : t | · t  →  s = v · t',`s = ${v} km/h · ${kz(t)} h`,`<b>s = ${kz(s)} km</b>`)};}
