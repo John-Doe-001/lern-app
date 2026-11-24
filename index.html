@@ -132,6 +132,13 @@ details.check[open]{display:flex;flex-direction:column;gap:14px}
 .q .calc.sent{font-family:var(--f-body);font-size:1.4rem;font-weight:700;line-height:1.4}
 .field input.wide{width:100%;max-width:520px;font-family:var(--f-body);font-size:1.5rem}
 .syncurl{font:inherit;font-size:1rem;width:100%;min-height:48px;padding:8px 12px;border-radius:12px;border:2px solid var(--line);background:var(--paper);color:var(--ink)}
+.mrows{display:flex;flex-direction:column;gap:10px}
+.mrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.mpre{font-family:var(--f-display);font-size:1.8rem;min-width:6.5em;font-variant-numeric:tabular-nums}
+.mrow .field input{width:170px}
+.mid{font-family:var(--f-display);font-size:2rem;align-self:center;padding-top:22px;font-variant-numeric:tabular-nums}
+.hgrid{display:inline-table;border-collapse:collapse;font-family:var(--f-display);font-size:1.7rem;background:var(--paper);border:2px solid var(--line);font-variant-numeric:tabular-nums}
+.hgrid td{padding:4px 10px;text-align:right}.hgrid tr.top1 td{border-bottom:2px solid var(--ink)}
 </style>
 
 <div class="wrap" id="app"></div>
@@ -820,6 +827,8 @@ function uebenView(app){
  else if(f.kind==='num')body=`<div class="inputs"><div class="field"><label for="in0">Deine Antwort</label><input id="in0" inputmode="decimal" autocomplete="off"></div>${f.unit?`<span class="unit">${f.unit}</span>`:''}</div>`;
  else if(f.kind==='text')body=`<div class="inputs"><div class="field" style="flex:1"><label for="in0">Your answer</label><input id="in0" class="wide" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></div></div>`;
  else if(f.kind==='time')body=`<div class="inputs"><div class="field"><label for="in0">Stunde</label><input id="in0" inputmode="numeric" autocomplete="off" class="short"></div><span class="unit">:</span><div class="field"><label for="in1">Minuten</label><input id="in1" inputmode="numeric" autocomplete="off" class="short"></div><span class="unit">Uhr</span></div>`;
+ else if(f.kind==='multi')body=f.layout==='rows'?`<div class="mrows">${f.fields.map((x,i)=>`<div class="mrow"><span class="mpre">${esc(x.pre)}</span><div class="field"><input id="in${i}" inputmode="numeric" autocomplete="off" aria-label="${esc(x.pre)}"></div></div>`).join('')}</div>`
+  :`<div class="inputs">${f.fields.map((x,i)=>`${i===1&&f.mid?`<span class="mid">${esc(f.mid)}</span>`:''}<div class="field"><label for="in${i}">${esc(x.lab)}</label><input id="in${i}" inputmode="numeric" autocomplete="off" class="short" style="width:150px"></div>`).join('')}</div>`;
  else body=`<div class="inputs"><div class="field"><label for="in0">Ergebnis</label><input id="in0" inputmode="numeric" autocomplete="off"></div><div class="field"><label for="in1">Rest</label><input id="in1" inputmode="numeric" autocomplete="off"></div></div>`;
  app.innerHTML=`<div class="top"><div><span class="fach">${t.fach} · ${t.titel}</span><p class="muted">Aufgabe ${S.n+1} von ${SESSION}</p></div>
    <div class="actions"><span class="lvl" aria-label="Stufe ${st.lvl} von 3">Stufe ${st.lvl}<span class="lvlbar">${[1,2,3].map(i=>`<i class="${i<=st.lvl?'on':''}"></i>`).join('')}</span></span><span class="starcount">★ ${S.stars}</span><button class="btn ghost small" id="pause">Pause</button></div></div>
@@ -845,6 +854,7 @@ function uebenView(app){
   if(f.kind==='mc'){ok=sel===0;given=f.opts[sel]}
   else if(f.kind==='text'){given=$('#in0').value;ok=textOk(f,given)}
   else if(f.kind==='num'){const v=parseNum($('#in0').value);ok=Math.abs(v-f.a)<1e-6||(f.alt||[]).some(x=>Math.abs(v-x)<1e-6);given=$('#in0').value}
+  else if(f.kind==='multi'){const v=f.fields.map((x,i)=>parseNum($('#in'+i).value));f._res=v.map((x,i)=>x===f.fields[i].a);ok=f._res.every(Boolean);given=v.join(' | ')}
   else{const a=parseNum($('#in0').value),b=parseNum($('#in1').value);ok=a===f.a[0]&&b===f.a[1];given=f.kind==='time'?a+':'+String(b).padStart(2,'0'):a+' Rest '+b}
   finish(ok,given,false);
  };
@@ -864,8 +874,8 @@ function uebenView(app){
   }
   save(DB);
   if(f.kind==='mc')app.querySelectorAll('.opt').forEach(b=>{b.disabled=true;const i=+b.dataset.i;if(i===0)b.classList.add('right');else if(i===sel)b.classList.add('wrong')});
-  else app.querySelectorAll('input').forEach(i=>{i.disabled=true;i.classList.add(ok?'right':'wrong')});
-  const sol=f.kind==='text'?`Richtig ist: <b>${esc(f.a[0])}</b>.<br>`:f.kind==='num'?`Richtig ist: <b>${f.unit==='€'?eur(f.a):zahl(f.a)}${f.unit?' '+f.unit:''}</b>.<br>`:f.kind==='time'?`Richtig ist: <b>${uhr(f.a[0],f.a[1])} Uhr</b>.<br>`:f.kind==='rest'?`Richtig ist: <b>${f.a[0]} Rest ${f.a[1]}</b>.<br>`:'';
+  else app.querySelectorAll('input').forEach((i,k)=>{i.disabled=true;const g=f.kind==='multi'&&f._res&&!skipped?f._res[k]:ok;i.classList.add(g?'right':'wrong')});
+  const sol=f.kind==='text'?`Richtig ist: <b>${esc(f.a[0])}</b>.<br>`:f.kind==='num'?`Richtig ist: <b>${f.unit==='€'?eur(f.a):zahl(f.a)}${f.unit?' '+f.unit:''}</b>.<br>`:f.kind==='time'?`Richtig ist: <b>${uhr(f.a[0],f.a[1])} Uhr</b>.<br>`:f.kind==='rest'?`Richtig ist: <b>${f.a[0]} Rest ${f.a[1]}</b>.<br>`:f.kind==='multi'?`Richtig ist: <b>${f.sol}</b>.<br>`:'';
   const fb=$('#fb');
   if(ok)fb.innerHTML=`<div class="fb ok pop"><h3>${pick(['Richtig, super!','Genau!','Klasse, stimmt!','Richtig!'])} ★</h3>${lvMsg}<details><summary>Erklärung ansehen</summary><p>${f.erk}</p></details></div>`;
   else fb.innerHTML=`<div class="fb ${skipped?'skip':'no'} pop"><h3>${skipped?'Kein Problem, so geht es:':'Noch nicht ganz. So geht es:'}</h3><p>${sol}${f.erk}</p>${lvMsg}</div>`;
@@ -1921,6 +1931,137 @@ Object.assign(GEN,{
  }
 });
 UEB.leonie.push({id:'u-diagramm',gen:'diagramm',fach:'IT',titel:'Diagramme',kurz:'Säulen-, Kreis- und Liniendiagramm: was passt wofür?',grp:'akt',check:null});
+
+/* ---------- Marvin Mathe: Heft S. 8, 10, 19 (Einmaleins/Rest, halbschriftlich, Zahlenstrahl) ---------- */
+function halbGrid(rows){const o=[rows[2],rows[0],rows[1]];return `<table class="hgrid">${o.map((r,i)=>`<tr${i===0?' class="top1"':''}><td>${esc(r[0])}</td><td>=</td><td>${zahl(r[1])}</td></tr>`).join('')}</table>`}
+function halbRows(a,b,q){const z=b-b%10,e=b%10;
+ return {kind:'multi',layout:'rows',q:q||'Rechne halbschriftlich: erst die Zehner, dann die Einer, dann zusammenzählen.',calc:`${a} · ${b}`,
+  fields:[{pre:`${a} · ${z} =`,a:a*z},{pre:`${a} · ${e} =`,a:a*e},{pre:`${a} · ${b} =`,a:a*b}],
+  sol:`${a} · ${z} = ${zahl(a*z)}, ${a} · ${e} = ${a*e}, ${a} · ${b} = ${zahl(a*b)}`,
+  tip:`Zerlege ${b} in ${z} und ${e}. Für ${a} · ${z} rechnest du ${a} · ${z/10} und hängst eine 0 an. Am Ende zählst du beide Ergebnisse zusammen.`,
+  erk:`${b} = ${z} + ${e}<br>${a} · ${z} = ${zahl(a*z)} (denn ${a} · ${z/10} = ${a*z/10}, dann 0 dran)<br>${a} · ${e} = ${a*e} (immer mit der ${a} malnehmen!)<br>${zahl(a*z)} + ${a*e} = <b>${zahl(a*b)}</b>`};}
+function halbPair(l){let a,b;
+ do{a=l===1?ri(2,5):ri(3,9);b=l===1?ri(12,49):ri(13,98)}while(b%10===0||(l>1&&Math.floor(b/10)===a&&Math.random()<.5));
+ return [a,b]}
+function halbFehler(){
+ let a,b,z,e,d;do{a=ri(3,9);b=ri(13,98);z=b-b%10;e=b%10;d=z/10}while(e===0||d===e||d===a||z<20);
+ const ok=[[`${a} · ${z}`,a*z],[`${a} · ${e}`,a*e]];
+ const t=pick(['faktor','zehner','zerlegen','plus','plus','ok']);
+ let rows,line,why;
+ if(t==='faktor'){rows=[ok[0],[`${d} · ${e}`,d*e]];line=1;why=`In der Einer-Zeile muss die ${a} mit den Einern malgenommen werden: ${a} · ${e} = ${a*e}, nicht ${d} · ${e}.`}
+ else if(t==='zehner'){const w=a*z+(Math.random()<.5&&a*z>200?-100:100);rows=[[ok[0][0],w],ok[1]];line=0;why=`${a} · ${z} ist nicht ${zahl(w)}. Rechne ${a} · ${d} = ${a*d}, dann eine 0 dran: ${zahl(a*z)}.`}
+ else if(t==='zerlegen'){rows=[[`${a} · ${e*10}`,a*e*10],ok[1]];line=0;why=`${b} hat ${d} Zehner und ${e} Einer. Also ${a} · ${z}, nicht ${a} · ${e*10}.`}
+ else rows=ok.slice();
+ let sum=rows[0][1]+rows[1][1];
+ if(t==='plus'){sum+=pick([10,20,-10,100]);if(sum===a*b)sum+=20;line=2;why=`Die Zeilen oben stimmen, aber ${zahl(rows[0][1])} + ${rows[1][1]} = ${zahl(a*b)}, nicht ${zahl(sum)}.`}
+ rows.push([`${a} · ${b}`,sum]);
+ const lab=['in der Zehner-Zeile','in der Einer-Zeile','beim Zusammenzählen'];
+ const right=t==='ok'?'Alles ist richtig.':'Der Fehler steckt '+lab[line]+'.';
+ const opts=[right,...['Der Fehler steckt '+lab[0]+'.','Der Fehler steckt '+lab[1]+'.','Der Fehler steckt '+lab[2]+'.','Alles ist richtig.'].filter(x=>x!==right)];
+ return {kind:'mc',q:`Fehler-Detektiv: Ein Kind hat ${a} · ${b} so gerechnet. Stimmt alles?`,img:halbGrid(rows),ilog:rows.map(r=>r[0]+'='+r[1]).join('; '),opts,
+  tip:'Rechne jede Zeile selbst nach: Stimmt die Zerlegung? Wird immer mit derselben Zahl malgenommen? Stimmt das Zusammenzählen?',
+  erk:(t==='ok'?'Alles stimmt. ':why+'<br>')+`Richtig: ${a} · ${z} = ${zahl(a*z)}, ${a} · ${e} = ${a*e}, zusammen <b>${zahl(a*b)}</b>.`};
+}
+function restOf(n,d){return [Math.floor(n/d),n%d]}
+function nbFields(n,s,name){const lo=Math.floor(n/s)*s;
+ return {kind:'multi',q:`Wie heißen die ${name} von ${zahl(n)}?`,mid:zahl(n),
+  fields:[{lab:'kleiner',a:lo},{lab:'größer',a:lo+s}],sol:`${zahl(lo)} und ${zahl(lo+s)}`,
+  tip:s===1000?`Schau auf die Tausenderstelle. Der kleinere Nachbartausender hat hinten 000, der größere ist 1 000 mehr.`:`Behalte Tausender und Hunderter, hinten kommt 00 hin. Der größere Nachbarhunderter ist genau 100 mehr. Die beiden sind nie gleich!`,
+  erk:`${zahl(n)} liegt zwischen <b>${zahl(lo)}</b> und <b>${zahl(lo+s)}</b>.${s===100?' Der zweite Nachbarhunderter ist immer 100 größer als der erste.':''}`};}
+function strahlSvg(lo,hi,step,lbl,val){
+ const W=700,x=v=>24+(v-lo)/(hi-lo)*(W-70);let t='';
+ for(let v=lo;v<=hi;v+=step){const big=(v-lo)%lbl===0,mid=!big&&(v-lo)%(lbl/2)===0;
+  t+=`<line x1="${x(v)}" y1="${big?70:mid?74:78}" x2="${x(v)}" y2="92" stroke="#333" stroke-width="${big?2:1}"/>`;
+  if(big)t+=`<text x="${x(v)}" y="112" text-anchor="middle" font-size="16" font-family="Arial" fill="#222">${zahl(v)}</text>`}
+ const bx=x(val);
+ return `<svg viewBox="0 0 ${W} 120" width="${W}" role="img" aria-label="Zahlenstrahl" style="max-width:100%;height:auto"><line x1="20" y1="92" x2="${W-14}" y2="92" stroke="#333" stroke-width="2"/><path d="M${W-14} 86 L${W-4} 92 L${W-14} 98" fill="none" stroke="#333" stroke-width="2"/>${t}<line x1="${bx}" y1="38" x2="${bx}" y2="90" stroke="#c0392b" stroke-width="2"/><path d="M${bx} 90 l-6 -10 h12 z" fill="#c0392b"/><circle cx="${bx}" cy="22" r="16" fill="#f39c12" stroke="#b9770e" stroke-width="2"/><text x="${bx}" y="28" text-anchor="middle" font-size="17" font-weight="bold" font-family="Arial" fill="#222">?</text></svg>`}
+Object.assign(GEN,{
+ halb(l){const r=Math.random();
+  if(l===1){
+   if(r<.25){let b,e,d;do{b=ri(12,98);e=b%10;d=Math.floor(b/10)}while(e===0||e===d);
+    return {kind:'mc',q:`Wie zerlegst du ${b} zum halbschriftlichen Malnehmen?`,opts:[`${d*10} + ${e}`,`${e*10} + ${d}`,`${d} + ${e}`,`${d*10} + ${e*10}`],
+     tip:`Die erste Ziffer sind die Zehner, die zweite die Einer.`,erk:`${b} hat ${d} Zehner und ${e} Einer: <b>${b} = ${d*10} + ${e}</b>.`};}
+   if(r<.45){const a=ri(2,9),z=ri(2,9)*10;return {kind:'num',q:'Rechne:',calc:`${a} · ${z}`,a:a*z,tip:`Rechne ${a} · ${z/10} und hänge eine 0 an.`,erk:`${a} · ${z/10} = ${a*z/10}, mit 0 dran: <b>${a*z}</b>.`};}
+   const [a,b]=halbPair(1);return halbRows(a,b);}
+  if(l===2){
+   if(r<.3)return halbFehler();
+   const [a,b]=halbPair(2);return halbRows(a,b);}
+  if(r<.25)return halbFehler();
+  if(r<.5){const [a,b]=halbPair(3);return {kind:'num',q:'Rechne halbschriftlich (gern auf einem Zettel):',calc:`${a} · ${b}`,a:a*b,
+   tip:`Zerlege ${b} in ${b-b%10} und ${b%10}. Rechne beide Teile mit ${a} mal und zähle zusammen.`,
+   erk:`${a} · ${b-b%10} = ${zahl(a*(b-b%10))}<br>${a} · ${b%10} = ${a*(b%10)}<br>zusammen <b>${zahl(a*b)}</b>`};}
+  if(r<.75){const a=ri(2,9),c=ri(2,10),n=c*10-1;
+   return {kind:'num',q:'Tipp für die 9: Rechne erst mit der Zehnerzahl, dann einmal weniger.',calc:`${a} · ${n}`,a:a*n,
+    tip:`${n} ist 1 weniger als ${c*10}. Rechne ${a} · ${c*10} und ziehe dann ${a} ab.`,
+    erk:`${a} · ${c*10} = ${zahl(a*c*10)}<br>${zahl(a*c*10)} − ${a} = <b>${zahl(a*n)}</b>`};}
+  const [t,u]=pick(ZSACH),[a,b]=halbPair(2);
+  return {kind:'num',q:t.replace('{Z}',b).replace('{a}',a),unit:u,a:a*b,
+   tip:`Rechne ${a} · ${b} halbschriftlich: ${a} · ${b-b%10} und ${a} · ${b%10}, dann zusammenzählen.`,
+   erk:`${a} · ${b-b%10} = ${zahl(a*(b-b%10))}, ${a} · ${b%10} = ${a*(b%10)}, zusammen <b>${zahl(a*b)} ${u}</b>.`};
+ },
+ teilrest(l){const r=Math.random();
+  const restTask=(d,q,rr)=>{const n=d*q+rr;return {kind:'rest',q:'Rechne:',calc:`${n} : ${d}`,a:[q,rr],
+   tip:`Suche in der ${d}er-Reihe die größte Zahl, die nicht größer als ${n} ist. Der Rest muss kleiner als ${d} sein.`,
+   erk:`${q} · ${d} = ${d*q}. ${n} − ${d*q} = ${rr}. Also ${n} : ${d} = <b>${q} Rest ${rr}</b>.${rr===0?' Es geht genau auf.':''}`}};
+  if(l===1){
+   if(r<.2){const a=ri(2,10),b=ri(3,9);return {kind:'num',q:'Rechne:',calc:`${a} · ${b}`,a:a*b,tip:`Denk an die ${b}er-Reihe.`,erk:`${a} · ${b} = <b>${a*b}</b>`};}
+   if(r<.4){const d=ri(2,9),q=ri(2,10);return {kind:'num',q:'Rechne:',calc:`${d*q} : ${d}`,a:q,tip:`Welche Zahl mal ${d} ergibt ${d*q}?`,erk:`${q} · ${d} = ${d*q}, also ${d*q} : ${d} = <b>${q}</b>.`};}
+   if(r<.55){const d=ri(3,9),q=ri(2,10);return {kind:'num',q:`Malreihe mit · ${d}: Welche Zahl fehlt?`,calc:`___ · ${d} = ${d*q}`,a:q,tip:`Rechne ${d*q} : ${d}.`,erk:`<b>${q}</b> · ${d} = ${d*q}`};}
+   const d=ri(2,6);return restTask(d,ri(2,9),ri(1,d-1));}
+  if(l===2){
+   if(r<.7){const d=ri(3,9);return restTask(d,ri(2,9),Math.random()<.85?ri(1,d-1):0);}
+   if(r<.85)return GEN.rest(3);
+   const d=ri(3,9),q=ri(3,8),rr=ri(1,d-1),n=d*q+rr,wq=q-1,wr=rr+d;
+   return {kind:'mc',q:`Stimmt diese Rechnung? ${n} : ${d} = ${wq} Rest ${wr}`,opts:[`Nein, der Rest ${wr} ist zu groß. Richtig ist ${q} Rest ${rr}.`,'Ja, das stimmt.',`Nein, richtig ist ${wq} Rest ${rr}.`],
+    tip:`Der Rest muss immer kleiner sein als die Zahl, durch die du teilst (hier ${d}).`,erk:`Der Rest ${wr} ist größer als ${d}, da passt noch einmal ${d} hinein. ${q} · ${d} = ${d*q}, ${n} − ${d*q} = ${rr}: <b>${q} Rest ${rr}</b>.`};}
+  if(r<.35){let d1,n1,n2,rr;do{d1=ri(4,9);rr=ri(1,d1-1);n1=d1*ri(4,9)+rr;n2=d1*ri(2,9)+rr}while(n1===n2||n1>99||n2>99);
+   const mk=(want)=>{let d,n,c=0;do{d=ri(Math.max(3,rr+1),9);n=d*ri(2,9)+(want?rr:ri(0,d-1));c++}while(c<50&&(n>99||n===n1||n===n2||(want?false:n%d===rr)));return n+' : '+d};
+   const ok=mk(true);const w=[];let c=0;while(w.length<3&&c<100){const x=mk(false);if(x!==ok&&!w.includes(x))w.push(x);c++}
+   const [okn,okd]=ok.split(' : ').map(Number),[q1]=restOf(n1,d1),[q2]=restOf(n2,d1),[q3]=restOf(okn,okd);
+   return {kind:'mc',q:`Päckchen mit gleichem Rest: ${n1} : ${d1} und ${n2} : ${d1}. Welche Aufgabe passt auch in dieses Päckchen?`,opts:[ok,...w],
+    tip:`Rechne zuerst ${n1} : ${d1} aus. Welcher Rest bleibt? Dann prüfe die Aufgaben unten.`,
+    erk:`${n1} : ${d1} = ${q1} Rest ${rr} und ${n2} : ${d1} = ${q2} Rest ${rr}. Auch <b>${ok} = ${q3} Rest ${rr}</b>.`};}
+  if(r<.6){const d=ri(4,9),q=ri(3,9),rr=ri(1,d-1);
+   return {kind:'num',q:'Welche Zahl fehlt?',calc:`___ : ${d} = ${q} Rest ${rr}`,a:d*q+rr,
+    tip:`Rechne rückwärts: ${q} · ${d}, dann den Rest ${rr} dazuzählen.`,erk:`${q} · ${d} = ${d*q}, ${d*q} + ${rr} = <b>${d*q+rr}</b>. Probe: ${d*q+rr} : ${d} = ${q} Rest ${rr}.`};}
+  if(r<.8){const d=ri(5,9),rr=ri(1,d-1),lo=ri(2,5)*10,hi=lo+30,all=[];for(let n=lo;n<=hi;n++)if(n%d===rr)all.push(n);
+   return {kind:'num',q:`Finde eine Zahl zwischen ${lo} und ${hi}, die geteilt durch ${d} den Rest ${rr} hat.`,a:all[0],alt:all,
+    tip:`Nimm eine Zahl aus der ${d}er-Reihe und zähle ${rr} dazu.`,erk:`Passend sind: <b>${all.join(', ')}</b>. Zum Beispiel ${all[0]} : ${d} = ${Math.floor(all[0]/d)} Rest ${rr}.`};}
+  const d=ri(6,9);return restTask(d,ri(10,Math.floor((100-d)/d)),ri(1,d-1));
+ },
+ zstrahl(l){const r=Math.random();
+  if(l===1){
+   if(r<.3){let n;do{n=ri(11,99)*100}while(n%1000===0);return nbFields(n,1000,'Nachbartausender');}
+   if(r<.6){let n;do{n=ri(101,999)*10}while(n%100===0);return nbFields(n,100,'Nachbarhunderter');}
+   if(r<.8){const s=pick([100,500,1000]),st=ri(1,Math.floor((10000-5*s)/s))*s;
+    return {kind:'num',q:'Zähle in Schritten. Welche Zahl kommt als Nächstes?',calc:`${zahl(st)}, ${zahl(st+s)}, ${zahl(st+2*s)}, ___`,a:st+3*s,
+     tip:`Um wie viel wird es jedes Mal größer?`,erk:`Immer + ${zahl(s)}: ${zahl(st+2*s)} + ${zahl(s)} = <b>${zahl(st+3*s)}</b>.`};}
+   const v=ri(1,19)*500;return {kind:'num',q:'Bei welcher Zahl steht der Ballon?',img:strahlSvg(0,10000,100,1000,v),ilog:'Ballon '+v,a:v,
+    tip:'Lange Striche sind volle Tausender. Der mittlere Strich zwischen zwei Tausendern ist 500.',erk:`Der Ballon steht bei <b>${zahl(v)}</b>.`};}
+  if(l===2){
+   if(r<.4){const n=Math.random()<.7?ri(101,999)*10:ri(1001,9999);if(n%100===0)return GEN.zstrahl(2);return nbFields(n,100,'Nachbarhunderter');}
+   if(r<.6){const n=ri(1001,9999);if(n%1000===0)return GEN.zstrahl(2);return nbFields(n,1000,'Nachbartausender');}
+   if(r<.8){const s=pick([200,300,250,500]),st=ri(Math.ceil(6*s/100),100)*100;if(st-5*s<0)return GEN.zstrahl(2);
+    return {kind:'multi',q:'Zähle rückwärts in Schritten. Wie heißen die nächsten zwei Zahlen?',calc:`${zahl(st)}, ${zahl(st-s)}, ${zahl(st-2*s)}, …`,
+     fields:[{lab:'nächste Zahl',a:st-3*s},{lab:'danach',a:st-4*s}],sol:`${zahl(st-3*s)} und ${zahl(st-4*s)}`,
+     tip:`Um wie viel wird es jedes Mal kleiner?`,erk:`Immer − ${s}: ${zahl(st-2*s)} → <b>${zahl(st-3*s)}</b> → <b>${zahl(st-4*s)}</b>.`};}
+   const v=ri(1,99)*100;return {kind:'num',q:'Bei welcher Zahl steht der Ballon?',img:strahlSvg(0,10000,100,1000,v),ilog:'Ballon '+v,a:v,
+    tip:'Lange Striche: volle Tausender. Mittlerer Strich: 500. Jeder kleine Strich ist 100.',erk:`Der Ballon steht bei <b>${zahl(v)}</b>.`};}
+  if(r<.3){const t=ri(1,9)*1000,n=t-ri(1,9)*10-(Math.random()<.5?0:ri(1,9)*100);if(n%100===0)return GEN.zstrahl(3);return nbFields(n,100,'Nachbarhunderter');}
+  if(r<.5){const lo=ri(1,8)*1000,v=lo+ri(1,19)*50;return {kind:'num',q:`Hier ist nur das Stück von ${zahl(lo)} bis ${zahl(lo+1000)} vergrößert. Bei welcher Zahl steht der Ballon?`,img:strahlSvg(lo,lo+1000,50,100,v),ilog:'Ballon '+v,a:v,
+   tip:'Lange Striche sind volle Hunderter. Der kurze Strich dazwischen ist die Hälfte, also 50.',erk:`Der Ballon steht bei <b>${zahl(v)}</b>.`};}
+  if(r<.75){const h=ri(11,99)*100,all=[];for(let n=h+1;n<h+100;n++)all.push(n);
+   return {kind:'num',q:`Nenne eine Zahl, deren Nachbarhunderter ${zahl(h)} und ${zahl(h+100)} sind.`,a:h+50,alt:all,
+    tip:`Die Zahl muss zwischen ${zahl(h)} und ${zahl(h+100)} liegen, zum Beispiel mit ${String(h).slice(0,-2)} vorne.`,erk:`Jede Zahl von ${zahl(h+1)} bis ${zahl(h+99)} passt, zum Beispiel <b>${zahl(h+50)}</b>.`};}
+  const n=ri(101,999)*10+(Math.random()<.5?0:ri(1,9));if(n%100===0)return GEN.zstrahl(3);const lo=n-n%100;
+  return {kind:'mc',q:`Welche Nachbarhunderter hat ${zahl(n)}?`,opts:[`${zahl(lo)} und ${zahl(lo+100)}`,`${zahl(lo)} und ${zahl(lo)}`,`${zahl(lo-100)} und ${zahl(lo)}`,`${zahl(n-n%1000)} und ${zahl(n-n%1000+1000)}`],
+   tip:'Nachbarhunderter: der volle Hunderter davor und der danach. Die beiden sind nie gleich.',erk:`${zahl(n)} liegt zwischen <b>${zahl(lo)}</b> und <b>${zahl(lo+100)}</b>.`};
+ }
+});
+UEB.marvin.unshift(
+ {id:'u-halb',gen:'halb',fach:'Mathe',titel:'Halbschriftlich malnehmen',kurz:'9 · 63 = 9 · 60 + 9 · 3, Fehler finden, Tipp für die 9 (Heft S. 10)',grp:'akt',check:null},
+ {id:'u-teilrest',gen:'teilrest',fach:'Mathe',titel:'Einmaleins und Teilen mit Rest',kurz:'50 : 7 = 7 Rest 1, Päckchen mit gleichem Rest (Heft S. 8)',grp:'akt',check:null},
+ {id:'u-zstrahl',gen:'zstrahl',fach:'Mathe',titel:'Zahlenstrahl bis 10 000',kurz:'Nachbartausender, Nachbarhunderter, Zählen in Schritten (Heft S. 19)',grp:'akt',check:null});
 
 /* ---------- Versand an Google-Tabelle ---------- */
 const SYNC_KEY='lernstand-sync-v1';
